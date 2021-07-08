@@ -1,0 +1,36 @@
+https://end-to-end-machine-learning.teachable.com/courses/navigating-matplotlib-tutorial-how-to/lectures/9626737
+https://jdhao.github.io/2017/06/03/change-aspect-ratio-in-mpl/
+
+Use style:
+plt.style.use('style')
+
+Make figure:
+fig, ((ax11, ax12), (ax21, ax22)) = plt.subplots(2,2, sharex='col', sharey='all',num=1,clear=True)
+
+Adjust layout etc:
+fig.subplots_adjust(hspace=0)
+ax11.axis([None,None,None,None])
+ax11.legend(loc='upper right')
+
+
+AXIS SCALE AND LIMITS:
+ax11.set_xlim(xmin,xmax)
+ax11.set_xscale('log')
+secax11 = ax11.secondary_xaxis('top', funtions=(conversion, inverse)) (linked secondary axis)
+
+TICKS AND LABELS:
+https://matplotlib.org/api/_as_gen/matplotlib.pyplot.tick_params.html
+https://brohrer.github.io/matplotlib_ticks.html
+ax11.tick_params(top=True, labelleft=False, direction='inout')
+ax11.tick_params(axis='x', direction='in', length=5, width=2, color='black')
+ax11.tick_params(axis='y', labelsize=10, labelrotation=45, labelcolor='black')
+ax11.xaxis.set_minor_locator(AutoMinorLocator())
+ax11.set_xlabel('label')
+
+
+PATCHES:
+https://e2eml.school/matplotlib_patches.html
+
+Plot:
+ax11.plot(x,y)
+
