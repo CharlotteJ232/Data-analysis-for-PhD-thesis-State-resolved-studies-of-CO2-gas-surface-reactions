@@ -100,33 +100,40 @@ def simulate_trajectory():
             return prob[-1]
 
 folderstart = 'C:/Users/jansenc3/Surfdrive/DATA/'
-# folderstart = 'C:/Users/Werk/surfdrive/DATA/'
+folderstart = 'C:/Users/Werk/surfdrive/DATA/'
 savefolder = folderstart+'Laser/Simulations/CO2/'
-save=False
+save=True
 if save:
     if not os.path.exists(savefolder):
         os.makedirs(savefolder)
 
 ## Expt input variables
-lam=4252.7E-9 # wavelength (m)
+
 fx=0.2       # focus length of lens in xz plane (m)
-lens = True # false for calculations without lens
+z0=0   # position of molecular beam from focussed waist (m)
+lens = False # false for calculations without lens
+
+vel=587       # velocity of molecular beam (m/s)
+fwhmv=0.25      # full width half maximum of velocity distribution (as fraction of v)
+
+lam=4252.7E-9 # wavelength (m)
+A21=1.811E+02  # Einstein coefficient (Hz)
+cg = 0.507 # transition probability (Clebsch-Gordan coefficient)
+# cg = -0.478091 #for m1=1
+# cg = 0.377964 #for m1=2
+
+
+ang=0.15       # angular spread of beam out of nozzle (degrees)
 rx=2e-03       # radius of unfocused laser in x (m)
 ry=2e-03       # radius of unfocused laser in y direction (m)
-vel=587       # velocity of molecular beam (m/s)
-fwhmv=0.2      # full width half maximum of velocity distribution (as fraction of v)
-ang=0.15       # angular spread of beam out of nozzle (degrees)
 
-z0=0   # position of molecular beam from focussed waist (m)
-A21=1.811E+02  # Einstein coefficient (Hz)
-cg=0.507 # transition probability (Clebsch-Gordan coefficient)
-
+#Numbers that change speed and accuracy of the calculation
 pcut=5e-05 # minimum laser power for integration (W)
-pmin=0     # minimum laser power for fluence curve (W)
-pmax=0.05     # maximum laser power for fluence curve (W)
 pstep=0.001 # laser power step for fluence curve (W)  , was 0.02
+pmin=pstep     # minimum laser power for fluence curve (W)
+pmax=0.05     # maximum laser power for fluence curve (W)
 
-nmax=50  # number of trajectories, was 500
+nmax=500  # number of trajectories, was 500
 
 noztolaser=350e-03 # distance between nozzle and laser (m)
 
@@ -181,11 +188,14 @@ plt.plot(power,pop)                 # plots fluence curve
 plt.show()
 plt.close()
 
+filename='fx_'+str(fx)+'_z0_'+str(z0)+'_lens_'+str(lens)+'_vel_'+str(vel)+'_fwhmv_'+str(fwhmv)+'_lam_'+str(lam)+'_cg_'+str(cg)+'_ang_'+str(ang)+'_rx_'+str(rx)+'_ry_'+str(ry)+'_nmax_'+str(nmax)+'.txt'
 if save:
     pop = np.array(pop)
     power = np.array(power)
     savedata = np.column_stack((power,pop))
-    np.savetxt(savefolder+'f_'+str(fx)+'_z_'+str(z0)+'.txt',savedata, header='power, population, nmax='+str(nmax))
+    f=open(savefolder+filename,'a')
+    np.savetxt(f,savedata)
+    f.close()
 
 
 
