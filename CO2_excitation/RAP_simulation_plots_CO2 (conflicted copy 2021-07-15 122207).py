@@ -10,7 +10,7 @@ def main():
     plot_all()
     average_cg()
 
-def plot_all(average_cg_coefficient=True):
+def plot_all():
     fx_list=[0.1,0.2,0.4,0.8]       # focus length of lens in xz plane (m)
     z0_list=[0.05,0.1,0.28,0.5]  # position of molecular beam from focussed waist (m)
     lens = True # false for calculations without lens
@@ -41,12 +41,10 @@ def plot_all(average_cg_coefficient=True):
                     else: 
                         totalpopulation += cg_weight*np.array(population)
                     first = False
-                    if not average_cg_coefficient:
-                        plt.plot(power,population,ls=ls, c=c,label='fx='+str(fx)+', z0='+str(z0)+', cg='+str(cg))
+                    # plt.plot(power,population,ls=ls, c=c,label='fx='+str(fx)+', z0='+str(z0)+', cg='+str(cg))
             totalpopulation /= np.sum(cg_weight_list)
-            if average_cg_coefficient:
-                plt.plot(power,totalpopulation,ls=ls, c=c,label='fx='+str(fx)+', z0='+str(z0))
-    plt.legend()
+            
+    # plt.legend()
     plt.axis([0,None,0,None])
     plt.show()
     plt.close()

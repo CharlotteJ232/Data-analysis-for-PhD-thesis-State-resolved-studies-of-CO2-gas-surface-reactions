@@ -109,19 +109,16 @@ if save:
 
 ## Expt input variables
 
-fx=0.2       # focus length of lens in xz plane (m)
-z0=0   # position of molecular beam from focussed waist (m)
-lens = False # false for calculations without lens
+fx_list=[0.3,0.5]       # focus length of lens in xz plane (m)
+z0_list=[0.28]  # position of molecular beam from focussed waist (m)
+lens = True # false for calculations without lens
 
 vel=587       # velocity of molecular beam (m/s)
 fwhmv=0.25      # full width half maximum of velocity distribution (as fraction of v)
 
 lam=4252.7E-9 # wavelength (m)
 A21=1.811E+02  # Einstein coefficient (Hz)
-cg = 0.507 # transition probability (Clebsch-Gordan coefficient)
-# cg = -0.478091 #for m1=1
-# cg = 0.377964 #for m1=2
-
+cg_list = [0.507,-0.478091,0.377964] # transition probability (Clebsch-Gordan coefficient)
 
 ang=0.15       # angular spread of beam out of nozzle (degrees)
 rx=2e-03       # radius of unfocused laser in x (m)
@@ -153,49 +150,55 @@ h=6.626e-34    # Plancks constant (Js)
 c= 2.997E8        # speed of light (m/s)
 ip=0           # counter for powers
 
-## calculating values that are the same for each trajectory
-w0x=rx #for no lens
-if lens:
-    w0x=lam*fx/(np.pi*rx)   # x beam waist at focal point of laser (m)
-w0y=ry                  # laser beam not focussed in y direction
-zrx=np.pi*w0x*w0x/lam   # Rayleigh range before focussing (m)
-A=np.pi*w0x*w0y            # area of focussed laser beam at waist (m^2)
-wb=2*np.pi*c/lam        # transition frequency
-mu21=cg*np.sqrt((3*eps0*h*c*c*c*A21)/(2*(wb*wb*wb))) # dipole moment (Cm)
+
+
 
 #calculate number of cores for parallel processing
 num_cores = cpu_count()
 
 ## Looping over trajectories
-pop = []
-power = []
 #  for P=pmin:pstep:pmax      # looping over laser power
-for P in tqdm(np.arange(pmin, pmax, pstep)):
-    ip=ip+1                   # Counter for powers used in a later loop
-    I=2*P/A                  # maximum laser intensity at waist (W/m^2)
-    E0=np.sqrt((2*I)/(eps0*c))  # electic field at waist (V/m)
+for fx in fx_list:
+    for z0 in z0_list:
+        for cg in cg_list:
+            print('fx ',fx,', z0',z0,', cg ',cg) #print the parameters of this iteration of the loop
+            pop = [] #make empty population list
+            power = [] #make empty power list
+            ## calculating values that are the same for each trajectory
+            w0x=rx #for no lens
+            if lens:
+                w0x=lam*fx/(np.pi*rx)   # x beam waist at focal point of laser (m)
+            w0y=ry                  # laser beam not focussed in y direction
+            zrx=np.pi*w0x*w0x/lam   # Rayleigh range before focussing (m)
+            A=np.pi*w0x*w0y            # area of focussed laser beam at waist (m^2)
+            wb=2*np.pi*c/lam        # transition frequency
+            mu21=cg*np.sqrt((3*eps0*h*c*c*c*A21)/(2*(wb*wb*wb))) # dipole moment (Cm)
+            for P in tqdm(np.arange(pmin, pmax, pstep)):
+                ip=ip+1                   # Counter for powers used in a later loop
+                I=2*P/A                  # maximum laser intensity at waist (W/m^2)
+                E0=np.sqrt((2*I)/(eps0*c))  # electic field at waist (V/m)
 
-    results = Parallel(n_jobs=num_cores)(delayed(simulate_trajectory)() for n in range(nmax))
-    results = np.array(results)
-    ispositive = results > 0 
-    probtot = np.average(results[ispositive]) # averaging probability over all trajectories
-          
-    pop.append(probtot)                   # making probability an array to plot later
-    power.append(1000*P)                    # making power an array to plot later
-# end                                    # end of power loop
+                results = Parallel(n_jobs=num_cores)(delayed(simulate_trajectory)() for n in range(nmax))
+                results = np.array(results)
+                ispositive = results > 0 
+                probtot = np.average(results[ispositive]) # averaging probability over all trajectories
+                    
+                pop.append(probtot)                   # making probability an array to plot later
+                power.append(1000*P)                    # making power an array to plot later
+            # end                                    # end of power loop
 
-plt.plot(power,pop)                 # plots fluence curve
-plt.show()
-plt.close()
+            plt.plot(power,pop)                 # plots fluence curve
+            plt.show()
+            plt.close()
 
-filename='fx_'+str(fx)+'_z0_'+str(z0)+'_lens_'+str(lens)+'_vel_'+str(vel)+'_fwhmv_'+str(fwhmv)+'_lam_'+str(lam)+'_cg_'+str(cg)+'_ang_'+str(ang)+'_rx_'+str(rx)+'_ry_'+str(ry)+'_nmax_'+str(nmax)+'.txt'
-if save:
-    pop = np.array(pop)
-    power = np.array(power)
-    savedata = np.column_stack((power,pop))
-    f=open(savefolder+filename,'a')
-    np.savetxt(f,savedata)
-    f.close()
+            filename='fx_'+str(fx)+'_z0_'+str(z0)+'_lens_'+str(lens)+'_vel_'+str(vel)+'_fwhmv_'+str(fwhmv)+'_lam_'+str(lam)+'_cg_'+str(cg)+'_ang_'+str(ang)+'_rx_'+str(rx)+'_ry_'+str(ry)+'_nmax_'+str(nmax)+'.txt'
+            if save:
+                pop = np.array(pop)
+                power = np.array(power)
+                savedata = np.column_stack((power,pop))
+                f=open(savefolder+filename,'a')
+                np.savetxt(f,savedata)
+                f.close()
 
 
 
