@@ -9,7 +9,7 @@ from joblib import Parallel, delayed
 import os
 
 # the Optical Bloch equation
-def bloch_diffequ_old_unchanged(t,y,E0,w0x,w0y,wzx,wzy,vx,vy,dylaser,dzlaser,mu21,h,z0,vz,zrx,lam,cg,Ecut,lens): #still has cg*mu21, but cg is already included in mu21 in my code
+def bloch_diffequ_old(t,y,E0,w0x,w0y,wzx,wzy,vx,vy,dylaser,dzlaser,mu21,h,z0,vz,zrx,lam,cg,Ecut,lens):
     """
     x=vx*t 
     y=vy*t+dylaser
@@ -46,114 +46,33 @@ def bloch_diffequ_old_unchanged(t,y,E0,w0x,w0y,wzx,wzy,vx,vy,dylaser,dzlaser,mu2
     
     return dydx
 
-def bloch_diffequ_old(t,y,E0,w0x,w0y,wzx,wzy,vx,vy,dylaser,dzlaser,mu21,h,z0,vz,zrx,lam,cg,Ecut,lens): #only removed the cg factor in cg*mu21
-    """
+def bloch_diffequ(t,y,E0,w0x,w0y,wzx,wzy,vx,vy,dylaser,dzlaser,mu21,h,z0,vz,zrx,lam,cg,Ecut,lens):
     x=vx*t 
     y=vy*t+dylaser
-    z=dzlaser+vz*t+z0
-
-    Rz=(dzlaser+vz*t+z0+(zrx*zrx)/(dzlaser+vz*t+z0))=z+zrx*zrx/z
-    wzx=((w0x*np.sqrt(1+(dzlaser+vz*t+z0)*(dzlaser+vz*t+z0)/(zrx*zrx))=w0x*np.sqrt(1+z*z/(zrx/zrx))
-
-    Frequencies in rad/s, and Bloch equations are:
-    dy[0]/dt=-(doppler-sweep)*y[1]
-    dy[1]/dt=(doppler-sweep)*y[0]+omega(z)*y[2]
-    dy[2]/dt=-omega(z)*y[1]fi
-
-    doppler=vz/lam
-    sweep=vx*vx*t/(Rz*lam)
-    omega(z)=(mu*E/h)*np.sqrt(wx_0*wy_0/(wx_z*wy_z)
-    E=E_0*exp(-x*x/(wx_z*wx_z)-y*y/(wy_z*wy_z))
-
-    Laser beam defined as travelling along z axis, molecular beam defined
-    as travelling along x axis.
-    """
-    dydx = np.zeros(3)
-    if (E0*(np.exp(-vx*t*vx*t/(wzx*wzx)-((dylaser+vy*t)*(dylaser+vy*t)/(wzy*wzy)))) > Ecut):
-        dydx[0]=-2*np.pi*(vz/lam-vx*vx*t/(lam*(dzlaser+vz*t+z0+(zrx*zrx)/(dzlaser+vz*t+z0))))*y[1]
-        
-        dydx[1]= (2*np.pi*((vz/lam-vx*vx*t/(lam*(dzlaser+vz*t+z0+(zrx*zrx)/(dzlaser+vz*t+z0))))*y[0]+
-                (mu21*E0/h)*np.exp(-vx*t*vx*t/((w0x*np.sqrt(1+(dzlaser+vz*t+z0)*(dzlaser+vz*t+z0)/(zrx*zrx)))*
-                (w0x*np.sqrt(1+(dzlaser+vz*t+z0)*(dzlaser+vz*t+z0)/(zrx*zrx))))-(dylaser+vy*t)*(dylaser+vy*t)/
-                (wzy*wzy))*np.sqrt((w0x*w0y)/((w0x*np.sqrt(1+(dzlaser+vz*t+z0)*(dzlaser+vz*t+z0)/(zrx*zrx)))*wzy))*y[2]))
-        
-        dydx[2]=(-2*np.pi*((mu21*E0/h)*np.exp(-vx*t*vx*t/((w0x*np.sqrt(1+(dzlaser+vz*t+z0)*(dzlaser+vz*t+z0)/(zrx*zrx)))*
-                (w0x*np.sqrt(1+(dzlaser+vz*t+z0)*(dzlaser+vz*t+z0)/(zrx*zrx))))-((dylaser+vy*t)*(dylaser+vy*t)/
-                (wzy*wzy)))*np.sqrt((w0x*w0y)/((w0x*np.sqrt(1+(dzlaser+vz*t+z0)*(dzlaser+vz*t+z0)/(zrx*zrx)))*wzy)))*y[1])
-    
-    return dydx
-
-def bloch_diffequ(t,y,E0,w0x,w0y,wzx,wzy,vx,vy,dylaser,dzlaser,mu21,h,z0,vz,zrx,lam,cg,Ecut,lens): #refactored from original function
-    """
-    x=vx*t 
-    y=vy*t+dylaser
-    z=dzlaser+vz*t+z0
-
-    Rz=(dzlaser+vz*t+z0+(zrx*zrx)/(dzlaser+vz*t+z0))=z+zrx*zrx/z
-    wzx=((w0x*np.sqrt(1+(dzlaser+vz*t+z0)*(dzlaser+vz*t+z0)/(zrx*zrx))=w0x*np.sqrt(1+z*z/(zrx/zrx))
-
-    Frequencies in rad/s, and Bloch equations are:
-    dy[0]/dt=-(doppler-sweep)*y[1]
-    dy[1]/dt=(doppler-sweep)*y[0]+omega(z)*y[2]
-    dy[2]/dt=-omega(z)*y[1]fi
-
-    doppler=vz/lam
-    sweep=vx*vx*t/(Rz*lam)
-    omega(z)=(mu*E/h)*np.sqrt(wx_0*wy_0/(wx_z*wy_z)
-    E=E_0*exp(-x*x/(wx_z*wx_z)-y*y/(wy_z*wy_z))
-
-    Laser beam defined as travelling along z axis, molecular beam defined
-    as travelling along x axis.
-    """
-    x=vx*t
-    y_coordinate=dylaser+vy*t
-    z=dzlaser+vz*t+z0
-
-    Rz=z+zrx*zrx/z
-    wzx=w0x*np.sqrt(1+z**2/zrx**2)
-
-    expon = np.exp(-x**2/wzx**2-y_coordinate**2/wzy**2)
-    E=E0*expon
-
-    doppler=vz/lam
-    sweep=vx**2*t/(Rz*lam)
-
-    omegaz=(mu21*E/h)*np.sqrt(w0x*w0y/(wzx*wzy))
-
-    dydx = np.zeros(3)
-    if (E0*(np.exp(-x*x/(wzx*wzx)-((y_coordinate)*(y_coordinate)/(wzy*wzy)))) > Ecut):
-        dydx[0]=-2*np.pi*(doppler-sweep)*y[1]
-        
-        dydx[1]= 2*np.pi*((doppler-sweep)*y[0]+omegaz*y[2])
-        
-        dydx[2]=-2*np.pi*omegaz*y[1]
-    
-    return dydx
-
-def bloch_diffequ_new(t,y,E0,w0x,w0y,wzx,wzy,vx,vy,dylaser,dzlaser,mu21,h,z0,vz,zrx,lam,cg,Ecut,lens): #made from scratch, based on the comments in original function
-    x=vx*t 
-    y_coordinate=dylaser+vy*t
     z=dzlaser+vz*t+z0
 
     Rz=z+zrx**2/z
     wzx=w0x*np.sqrt(1+z**2/zrx**2)
-    # if not lens:
-    #     wzx = w0x
+    if lens:
+        wzx = w0x
 
-    E=E0*np.exp(-x**2/wzx**2-y_coordinate**2/wzy**2)
+    E=E0*np.exp(-x**2/wzx**2-y**2/wzy**2)
 
     #Only these three are in the final bloch equations
     doppler=vz/lam
     sweep=vx**2*t/(Rz*lam)
-    # if not lens:
-    #     sweep=0
+    if lens:
+        sweep=0
     omegaz=(mu21*E/h)*np.sqrt(w0x**2/wzx**2)
 
+
+
     dydx = np.zeros(3)
-    if E > Ecut:        
-        dydx[0]=-2*np.pi*(doppler-sweep)*y[1]
-        dydx[1]=2*np.pi*((doppler-sweep)*y[0]+omegaz*y[2])
-        dydx[2]=-2*np.pi*omegaz*y[1]
+
+    if E > Ecut:         # Frequencies in rad/s, and Bloch equations are:
+        dydx[0]=-(doppler-sweep)*y[1]
+        dydx[1]=(doppler-sweep)*y[0]+omegaz*y[2]
+        dydx[2]=-omegaz*y[1]
 
     return dydx
 
@@ -206,7 +125,7 @@ def simulate_trajectory():
             Icut=2*pcut/(wzx*wzy)          # intensity cut off for integration
             Ecut=np.sqrt((2*Icut)/(eps0*c))   # electric field cut off for integration (approx 200 works well)
             # [X,Y] = ode45(@(t,y) bloch_diffequ(t,y,E0,w0x,w0y,wzx,wzy,vx,vy,dylaser,dzlaser,mu21,h,z0,vz,zrx,lam,cg,Ecut),[-3*T,3*T],[0,0,-1])
-            XY = solve_ivp(bloch_diffequ_old,[-3*T,3*T],[0,0,-1], 
+            XY = solve_ivp(bloch_diffequ,[-3*T,3*T],[0,0,-1], 
                     args=(E0,w0x,w0y,wzx,wzy,vx,vy,dylaser,dzlaser,mu21,h,z0,vz,zrx,lam,cg,Ecut,lens))
             
             prob=(1+XY['y'][2,:])/2              # Prob=(1+y[2])/2
@@ -215,7 +134,6 @@ def simulate_trajectory():
 folderstart = 'C:/Users/jansenc3/Surfdrive/DATA/'
 folderstart = 'C:/Users/Werk/surfdrive/DATA/'
 savefolder = folderstart+'Laser/Simulations/CO2/'
-filenameaddition = '_bloch_old_cg_removed'
 save=True
 if save:
     if not os.path.exists(savefolder):
@@ -232,11 +150,11 @@ fwhmv=0.25      # full width half maximum of velocity distribution (as fraction 
 
 lam=4252.7E-9 # wavelength (m)
 A21=1.811E+02  # Einstein coefficient (Hz)
-cg_list = [0.507] # transition probability (Clebsch-Gordan coefficient) ,-0.478091,0.377964
+cg_list = [0.507,-0.478091,0.377964] # transition probability (Clebsch-Gordan coefficient) 
 
 ang=0.15       # angular spread of beam out of nozzle (degrees)
-rx_list=[0.002]       # radius of unfocused laser in x (m)
-ry_list=[0.002]       # radius of unfocused laser in y direction (m). coupled to rx_list for the for loop, so there are n iterations and not n^2
+rx_list=[0.001,0.003,0.004]       # radius of unfocused laser in x (m)
+ry_list=[0.001,0.003,0.004]       # radius of unfocused laser in y direction (m). coupled to rx_list for the for loop, so there are n iterations and not n^2
 
 #Numbers that change speed and accuracy of the calculation
 pcut=5e-05 # minimum laser power for integration (W)
