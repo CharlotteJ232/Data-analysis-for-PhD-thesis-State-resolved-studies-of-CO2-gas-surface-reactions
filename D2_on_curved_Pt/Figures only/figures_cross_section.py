@@ -14,7 +14,7 @@ import colorcet as cc
 
 
 plt.style.reload_library()
-plt.style.use('voorbeeld')
+# plt.style.use('voorbeeld')
 
 folderstart = 'P:/Surfdrive/DATA/'
 folderstart = 'D:/Surfdrive/DATA/'

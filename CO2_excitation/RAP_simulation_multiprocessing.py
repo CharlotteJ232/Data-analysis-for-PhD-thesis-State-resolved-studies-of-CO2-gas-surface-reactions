@@ -85,23 +85,6 @@ def bloch_diffequ_old(t,y,E0,w0x,w0y,wzx,wzy,vx,vy,dylaser,dzlaser,mu21,h,z0,vz,
 
 def bloch_diffequ(t,y,E0,w0x,w0y,wzx,wzy,vx,vy,dylaser,dzlaser,mu21,h,z0,vz,zrx,lam,cg,Ecut,lens): #refactored from original function
     """
-    x=vx*t 
-    y=vy*t+dylaser
-    z=dzlaser+vz*t+z0
-
-    Rz=(dzlaser+vz*t+z0+(zrx*zrx)/(dzlaser+vz*t+z0))=z+zrx*zrx/z
-    wzx=((w0x*np.sqrt(1+(dzlaser+vz*t+z0)*(dzlaser+vz*t+z0)/(zrx*zrx))=w0x*np.sqrt(1+z*z/(zrx/zrx))
-
-    Frequencies in rad/s, and Bloch equations are:
-    dy[0]/dt=-(doppler-sweep)*y[1]
-    dy[1]/dt=(doppler-sweep)*y[0]+omega(z)*y[2]
-    dy[2]/dt=-omega(z)*y[1]fi
-
-    doppler=vz/lam
-    sweep=vx*vx*t/(Rz*lam)
-    omega(z)=(mu*E/h)*np.sqrt(wx_0*wy_0/(wx_z*wy_z)
-    E=E_0*exp(-x*x/(wx_z*wx_z)-y*y/(wy_z*wy_z))
-
     Laser beam defined as travelling along z axis, molecular beam defined
     as travelling along x axis.
     """
@@ -110,22 +93,24 @@ def bloch_diffequ(t,y,E0,w0x,w0y,wzx,wzy,vx,vy,dylaser,dzlaser,mu21,h,z0,vz,zrx,
     z=dzlaser+vz*t+z0
 
     Rz=z+zrx*zrx/z
-    wzx=w0x*np.sqrt(1+z**2/zrx**2)
+    if lens:
+        wzx=w0x*np.sqrt(1+z**2/zrx**2)
+    else:
+        wzx=w0x
 
-    expon = np.exp(-x**2/wzx**2-y_coordinate**2/wzy**2)
-    E=E0*expon
+    E=E0*np.exp(-x**2/wzx**2-y_coordinate**2/wzy**2)
 
     doppler=vz/lam
-    sweep=vx**2*t/(Rz*lam)
-
+    if lens:
+        sweep=vx**2*t/(Rz*lam)
+    else:
+        sweep=0
     omegaz=(mu21*E/h)*np.sqrt(w0x*w0y/(wzx*wzy))
 
     dydx = np.zeros(3)
     if (E0*(np.exp(-x*x/(wzx*wzx)-((y_coordinate)*(y_coordinate)/(wzy*wzy)))) > Ecut):
-        dydx[0]=-2*np.pi*(doppler-sweep)*y[1]
-        
+        dydx[0]=-2*np.pi*(doppler-sweep)*y[1] 
         dydx[1]= 2*np.pi*((doppler-sweep)*y[0]+omegaz*y[2])
-        
         dydx[2]=-2*np.pi*omegaz*y[1]
     
     return dydx
@@ -205,8 +190,7 @@ def simulate_trajectory():
             T=wzx/vx                       # half transit time of beam
             Icut=2*pcut/(wzx*wzy)          # intensity cut off for integration
             Ecut=np.sqrt((2*Icut)/(eps0*c))   # electric field cut off for integration (approx 200 works well)
-            # [X,Y] = ode45(@(t,y) bloch_diffequ(t,y,E0,w0x,w0y,wzx,wzy,vx,vy,dylaser,dzlaser,mu21,h,z0,vz,zrx,lam,cg,Ecut),[-3*T,3*T],[0,0,-1])
-            XY = solve_ivp(bloch_diffequ_old,[-3*T,3*T],[0,0,-1], 
+            XY = solve_ivp(bloch_diffequ,[-3*T,3*T],[0,0,-1], 
                     args=(E0,w0x,w0y,wzx,wzy,vx,vy,dylaser,dzlaser,mu21,h,z0,vz,zrx,lam,cg,Ecut,lens))
             
             prob=(1+XY['y'][2,:])/2              # Prob=(1+y[2])/2
@@ -215,8 +199,8 @@ def simulate_trajectory():
 folderstart = 'C:/Users/jansenc3/Surfdrive/DATA/'
 folderstart = 'C:/Users/Werk/surfdrive/DATA/'
 savefolder = folderstart+'Laser/Simulations/CO2/'
-filenameaddition = '_bloch_old_cg_removed'
-save=True
+filenameaddition = '_bloch_new_nolens'
+save=False
 if save:
     if not os.path.exists(savefolder):
         os.makedirs(savefolder)
@@ -227,21 +211,21 @@ fx_list=[0.2]       # focus length of lens in xz plane (m)
 z0_list=[0.28]  # position of molecular beam from focussed waist (m)
 lens = True # false for calculations without lens
 
-vel=587       # velocity of molecular beam (m/s)
-fwhmv=0.25      # full width half maximum of velocity distribution (as fraction of v)
+vel=2128       # velocity of molecular beam (m/s) (587 for pure)
+fwhmv=0.17     # full width half maximum of velocity distribution (as fraction of v)
 
-lam=4252.7E-9 # wavelength (m)
-A21=1.811E+02  # Einstein coefficient (Hz)
-cg_list = [0.507] # transition probability (Clebsch-Gordan coefficient) ,-0.478091,0.377964
+lam=4255.469316E-9 # wavelength (m) (4252.7)
+A21=2/np.pi * 1.407E2  # Einstein coefficient (Hz) (1.811E+02)
+cg_list = [1] # transition probability (Clebsch-Gordan coefficient) 0.507,-0.478091,0.377964
 
 ang=0.15       # angular spread of beam out of nozzle (degrees)
 rx_list=[0.002]       # radius of unfocused laser in x (m)
-ry_list=[0.002]       # radius of unfocused laser in y direction (m). coupled to rx_list for the for loop, so there are n iterations and not n^2
+ry_list=rx_list      # radius of unfocused laser in y direction (m). coupled to rx_list for the for loop, so there are n iterations and not n^2
 
 #Numbers that change speed and accuracy of the calculation
 pcut=5e-05 # minimum laser power for integration (W)
-pstep=0.001 # laser power step for fluence curve (W)  , was 0.02
-pmin=pstep     # minimum laser power for fluence curve (W)
+pstep=0.002 # laser power step for fluence curve (W)  
+pmin=pstep*0.1     # minimum laser power for fluence curve (W)
 pmax=0.05     # maximum laser power for fluence curve (W)
 
 nmax=500  # number of trajectories, was 500
@@ -262,8 +246,6 @@ skimdiam2=skimdiam2/2   # 2nd skimmer radius (m)
 eps0=8.85e-12	# vacuum permitivity (F/m)
 h=6.626e-34    # Plancks constant (Js)
 c= 2.997E8        # speed of light (m/s)
-ip=0           # counter for powers
-
 
 #calculate number of cores for parallel processing
 num_cores = cpu_count()
@@ -287,12 +269,13 @@ for rx, ry in zip(rx_list,ry_list):
                 wb=2*np.pi*c/lam        # transition frequency
                 mu21=cg*np.sqrt((3*eps0*h*c*c*c*A21)/(2*(wb*wb*wb))) # dipole moment (Cm)
                 for P in tqdm(np.arange(pmin, pmax, pstep)):
-                    ip=ip+1                   # Counter for powers used in a later loop
+
                     I=2*P/A                  # maximum laser intensity at waist (W/m^2)
                     E0=np.sqrt((2*I)/(eps0*c))  # electic field at waist (V/m)
 
                     results = Parallel(n_jobs=num_cores)(delayed(simulate_trajectory)() for n in range(nmax))
                     results = np.array(results)
+                    # print(results)
                     ispositive = results > 0 
                     probtot = np.average(results[ispositive]) # averaging probability over all trajectories
                         
@@ -313,6 +296,6 @@ for rx, ry in zip(rx_list,ry_list):
                     # f=open(savefolder+filename,'a')
                     # np.savetxt(f,savedata)
                     # f.close()
-
+print('Done!')
 
 

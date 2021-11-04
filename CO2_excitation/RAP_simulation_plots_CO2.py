@@ -21,33 +21,28 @@ ry=2e-03       # radius of unfocused laser in y direction (m)
 nmax=500  # number of trajectories, was 500
 
 def main():
-    fx_list=[0.1,0.2,0.3,0.4,0.5,0.8]       # focus length of lens in xz plane (m)
-    z0_list=[0.05,0.1,0.28,0.5]  # position of molecular beam from focussed waist (m)
-    lens=True
-    plot_fx_z0(fx_list,z0_list,lens=lens,title='With lens')
-
-    fx_list=[5,20,100]
-    z0_list=fx_list
-    lens = True # false for calculations without lens
-    plot_fx_z0(fx_list,z0_list,lens=lens, title='With lens, large fx')
+    # fx_list=[0.1,0.2,0.3,0.4,0.5,0.8]       # focus length of lens in xz plane (m)
+    # z0_list=[0.05,0.1,0.28,0.5]  # position of molecular beam from focussed waist (m)
+    # lens=True
+    # plot_fx_z0(fx_list,z0_list,lens=lens,title='With lens')
 
     lens=False
-    fx_list=[5,20,100,1000]
+    fx_list=[5,10,20,50,100,200,1000]
     z0_list=[0]+fx_list
     plot_fx_z0(fx_list,z0_list,lens=lens, title='Without lens')
 
     lens=True
     fx=0.2
     z0=0.28
-    rx_list=[0.001,0.002, 0.003] 
+    rx_list=[0.002, 0.003, 0.004] 
     ry_list=rx_list
-    plot_r(rx_list,ry_list, fx, z0, lens=lens, title='Different r values')
+    plot_r(rx_list,ry_list, fx, z0, lens=lens, title='Different diameters')
 
 
 def plot_fx_z0(fx_list,z0_list, average_cg_coefficient=True, lens=True, title=''):
 
-    for fx,c in zip(fx_list,['r', 'b', 'black', 'gray', 'g', 'cyan', 'gold']):
-        for z0,ls in zip(z0_list,['--',':','-','-.','-']):
+    for fx,c in zip(fx_list,['r', 'b', 'black', 'gray', 'g', 'cyan', 'gold', 'orange','magenta','lightgreen']):
+        for z0,ls in zip(z0_list,['--',':','-','-.','-','--',':','-','-.']):
             first = True #for adding different datasets with different cg
             incomplete = False #becomes true when a cg value is missing
             for cg,cg_weight in zip(cg_list,cg_weight_list):

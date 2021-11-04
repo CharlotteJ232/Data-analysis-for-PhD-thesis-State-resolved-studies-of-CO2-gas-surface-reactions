@@ -20,22 +20,38 @@ import os
 
 save_all_plots = True
 
-directory = 'P:/Surfdrive/'
-directory = 'C:/Users/Werk/surfdrive/'
+directory = 'C:/Users/jansenc3/surfdrive/'
+# directory = 'C:/Users/Werk/surfdrive/'
 
-experiment_list = [] #list contains tuples (data_folder, nozzle_temp, gas_mass, avg_mass, start_dataset, nr_of_datasets)
+experiment_list = [] #list contains tuples (data_folder, nozzle_temp, nozzle_pressure, gas_mass, avg_mass, start_dataset, nr_of_datasets)
 
-experiment_list.append((directory+'DATA/2021/05 May/210504/TOF/', 300, 0.044, 0.044, 0, 7))
-experiment_list.append((directory+'DATA/2021/05 May/210521/TOF/', 300, 0.044, 0.0128889, 0, 7))
-
-
+# experiment_list.append((directory+'DATA/2021/05 May/210504/TOF/', 300, 0, 0.044, 0.044, 0, 7))
+# experiment_list.append((directory+'DATA/2021/05 May/210521/TOF/', 300, 0, 0.044, 0.0128889, 0, 7))
+# experiment_list.append((directory+'DATA/2021/07 Jul/210722/TOF/', 300, 1678, 0.004, 0.004, 0, 7)) #10 mL/min, 1678 mbar
+# experiment_list.append((directory+'DATA/2021/07 Jul/210722/TOF/', 300, 2865, 0.004, 0.004, 7, 7)) #20 mL/min, 2865 mbar
+# experiment_list.append((directory+'DATA/2021/07 Jul/210722/TOF/', 300, 4005, 0.004, 0.004, 14, 7)) #30 mL/min, 4005 mbar
+# experiment_list.append((directory+'DATA/2021/07 Jul/210722/TOF/', 300, 4560, 0.004, 0.004, 21, 7)) #35 mL/min, 4560 mbar
+# experiment_list.append((directory+'DATA/2021/07 Jul/210723/TOF/', 300, 3437, 0.004, 0.004, 0, 7)) #25 mL/min, 3437 mbar
+# experiment_list.append((directory+'DATA/2021/07 Jul/210723/TOF/', 300, 4230, 0.004, 0.004, 7, 7)) #32 mL/min, 4230 mbar
+# experiment_list.append((directory+'DATA/2021/07 Jul/210723/TOF/', 300, 4778, 0.004, 0.004, 14, 7)) #37 mL/min, 4778 mbar
+# experiment_list.append((directory+'DATA/2021/07 Jul/210723/TOF/', 300, 4940, 0.004, 0.004, 21, 7)) #38.5 mL/min, 4940 mbar
+# experiment_list.append((directory+'DATA/2021/07 Jul/210726/TOF/', 373, 4590, 0.004, 0.004, 0, 7)) #30 mL/min
+# experiment_list.append((directory+'DATA/2021/07 Jul/210726/TOF/', 473, 5300, 0.004, 0.004, 7, 7)) #30 mL/min
+# experiment_list.append((directory+'DATA/2021/07 Jul/210726/TOF/', 573, 5900, 0.004, 0.004, 14, 7)) #30 mL/min
+# experiment_list.append((directory+'DATA/2021/07 Jul/210726/TOF/', 573, 4333, 0.004, 0.004, 21, 7)) #20 mL/min
+# experiment_list.append((directory+'DATA/2021/07 Jul/210726/TOF/', 673, 4805, 0.004, 0.004, 28, 7)) #20 mL/min
+# experiment_list.append((directory+'DATA/2021/07 Jul/210727/TOF/', 573, 5340, 0.004, (0.004*25+0.044*0.5)/25.5, 0, 7)) #25.5 mL/min
+# experiment_list.append((directory+'DATA/2021/07 Jul/210727/TOF/', 573, 5340, 0.044, (0.004*25+0.044*0.5)/25.5, 7, 7)) #25.5 mL/min
+experiment_list.append((directory+'DATA/2021/09 Sep/210930/TOF/', 300, 3700, 0.004, (0.004*25+0.044*1)/26, 0, 7)) 
+experiment_list.append((directory+'DATA/2021/09 Sep/210930/TOF/', 300, 3700, 0.044, (0.004*25+0.044*1)/26, 7, 7)) 
  
 data_positions = [0, 46, 35, 25, 15, 5, 0] #positions on moving stage (mm), corresponding to number of dataset above
 
 measured_chopper_freq = False
-chopper_freq = 250 #Hz
+chopper_freq = 253 #Hz
 data_vext = np.ones(len(data_positions)) #not used now, but I am too lazy to remove it from the code
 savefolder = ''
+peak_fraction_gauss_fit = 1/3 #top fraction of the peak used for the gaussian fit to guess ts
 
 increase_fit_bounds = 1 #increases the fitparameter bound range by this factor. If you use this, check if the path length is not fitted to an incorrect value
 
@@ -43,11 +59,14 @@ def main():
 
 ############# Script ########################################################  
     for experiment in experiment_list:
-        data_folder, nozzle_temp, gas_mass, avg_mass = experiment[:-2]
+        data_folder, nozzle_temp, p_nozzle, gas_mass, avg_mass = experiment[:-2]
         dataid = Dataidentifier(*experiment[-2:], data_positions, data_vext)
         global savefolder 
         savefolder = data_folder+'Images/'+exp_number_to_str(dataid.data_nrs[0],filenamestart='TOF')+'/'+str(gas_mass * 1000)+'/'
+        if not os.path.exists(savefolder):
+            os.makedirs(savefolder)
         print(data_folder)
+        np.savetxt(savefolder+'Pnozzle.txt',[p_nozzle])
 
         
         exp = Experiment(data_folder, dataid, chopper_freq, gas_mass, avg_mass, nozzle_temp, measured_chopper_freq)
@@ -60,6 +79,8 @@ def main():
             dataset.plotfit(exp, nr, save=save_all_plots,isolate_peak=True)
         
         exp.plot_v_E_distr(save=save_all_plots)
+
+        print('Finished')
     
 
 
@@ -89,10 +110,10 @@ class Experiment:
         
         self.read_datasets(dataid)
         
- #        self.plot_raw_data()
+        # self.plot_raw_data()
         
         #Guessed parameters of the time/velocity distribution
-        self.L_guess = 567
+        self.L_guess = 567 #mm
         
         self.E_guess = 2.5*8.314*self.nozzle_temp #for perfect expansion
         self.v_guess = np.sqrt(2*self.E_guess/self.avg_mass) #for perfect expansion
@@ -174,7 +195,8 @@ class Experiment:
 
             x = dataset.time[self.index_guess-self.index_window:self.index_guess+self.index_window] #select only the peak within the window
             y = dataset.counts[self.index_guess-self.index_window:self.index_guess+self.index_window]
-            thresh = (1/2*np.min(y)+1/2*np.max(y))# select only top half of the peak
+            # thresh = (1/2*np.min(y)+1/2*np.max(y))# select only top half of the peak
+            thresh = np.min(y)+(1-peak_fraction_gauss_fit)*(np.max(y)-np.min(y))
 
             index = y > thresh
             x = x[index]
@@ -310,11 +332,20 @@ class Experiment:
         plt.ylabel('Probability density')
         plt.xlabel('v (m/s)')
         plt.axis([0,vmax,0,None])
+
+        upper = np.argwhere(yv > np.max(yv)/2)
+        upper = v[upper]
+        width = upper[-1]-upper[0]
+        #calculate delta v / v
+        deltv = width / v[np.argmax(yv)]
         
         if save:
             if not os.path.exists(savefolder):
                 os.makedirs(savefolder)
-            plt.savefig(savefolder+'velocity.png', dpi=1000)        
+            plt.savefig(savefolder+'velocity.png', dpi=1000) 
+            X = np.column_stack((v, yv/np.sum(yv)))
+            np.savetxt(savefolder+'velocity.txt',X,header='Velocity (m/s), probability density')
+            np.savetxt(savefolder+'deltv.txt',deltv)
         
         plt.show()
         plt.close()
@@ -327,8 +358,9 @@ class Experiment:
         upper = E[upper]
         width = upper[-1]-upper[0]
         q = np.sum(E*yE)/np.sum(yE)/width
-        
-        
+        #calculate delta E / E
+        deltE = width / E[np.argmax(yE)]
+        print(deltE)
         
         plt.plot(E, yE/np.sum(yE))
         plt.title('Energy distribution, E_avg = '+str(np.round(np.sum(E*yE)/np.sum(yE),3))+' kJ/mol, Q = '+str(np.round(q[0],2)))
@@ -340,12 +372,13 @@ class Experiment:
             if not os.path.exists(savefolder):
                 os.makedirs(savefolder)
             plt.savefig(savefolder+'energy.png', dpi=1000)
+            X = np.column_stack((E, yE/np.sum(yE)))
+            np.savetxt(savefolder+'energy.txt',X,header='Energy (kJ/mol), probability density')
+            np.savetxt(savefolder+'deltE.txt',deltE)
         
         plt.show()
         plt.close()
         
-        X = np.column_stack((E, yE/np.sum(yE)))
-        np.savetxt(savefolder+'energy.txt',X,header='Energy (kJ/mol), probability density')
         
             
 class Dataset:

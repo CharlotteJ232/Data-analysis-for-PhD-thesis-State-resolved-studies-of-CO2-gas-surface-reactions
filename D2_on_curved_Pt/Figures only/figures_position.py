@@ -14,10 +14,10 @@ import colorcet as cc
 
 
 plt.style.reload_library()
-plt.style.use('voorbeeld')
+# plt.style.use('voorbeeld')
 
 folderstart = 'P:/Surfdrive/DATA/'
-folderstart = 'D:/Surfdrive/DATA/'
+folderstart = 'C:/Users/Werk/Surfdrive/DATA/'
 year = '2020/'
 file_kw = '/KW/Images/stickingprob_vs_position.txt'
 file_TOF = '/TOF/Images/4.0/energy.txt'

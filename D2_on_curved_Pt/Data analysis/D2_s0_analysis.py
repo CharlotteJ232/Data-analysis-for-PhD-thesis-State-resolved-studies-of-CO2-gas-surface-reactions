@@ -28,7 +28,7 @@ file_kw = '/KW/Images/stickingprob_vs_position.txt'
 file_TOF = '/TOF/Images/4.0/corrected/energy.txt'
 loadfolder = folderstart+'D2 sticking probability as a function of step density and kinetic energy/Images/'
 savefolder = folderstart+'D2 sticking probability as a function of step density and kinetic energy/Images/Corrected/'
-save_figs = True
+save_figs = False
 
 datadic = {0.7:{'kw_day':'03 Mar/200310', 'TOF_day':'03 Mar/200310','c':'red'},
            0.8:{'kw_day':'05 May/200512', 'TOF_day':'01 Jan/200128','c':'orange'},
@@ -60,14 +60,14 @@ def main():
     # # plot the energy distribution obtained by TOF measurements
     # plot_energy_dist(datalist)
 
-    # #test convolution
-    # test_convolution(datalist,save=True)
+    #test convolution
+    test_convolution(datalist,save=save_figs)
     
-    # #plot the raw s0 data
-    # plot_s0_vs_pos(datalist,save=True)
+    #plot the raw s0 data
+    plot_s0_vs_pos(datalist,save=save_figs)
 
     #Fit straight lines through the data, now only mostly useful to fit the center
-    center,slopeleft,sloperight,offset = fit_all_slopes(datalist,fitrange=fitrange,center_guess=19.91,save=False)
+    center,slopeleft,sloperight,offset = fit_all_slopes(datalist,fitrange=fitrange,center_guess=19.91,save=False, plot=False)
     
     #make the dataset.probed_step_density array
     for dataset in datalist:
@@ -78,30 +78,30 @@ def main():
     #plot s0 vs E and fit the exp + line. necessary for data analysis. don't comment out 
     plot_s0_vs_E(datalist, use_stepdens=True, save=save_figs) 
     
-    #calculate cross section and calculate BA ratio, plot BA ratio
-    fig, ax = plt.subplots()
-    for dataset in datalist:
-        dataset.calc_cross_section()
-        dataset.save_crossec_s0(folderstart+'D2 sticking probability as a function of step density and kinetic energy/Crossec/')
-        dataset.calc_BAratio()
-        print(dataset.E_avg, dataset.BAratio)
-        ax.scatter(dataset.E_avg,dataset.BAratio,color='black')
-    ax.plot(-1,-1,color='black',ls='none',marker='o',label='This study') #for legend only
-    ax.plot(0.9, 1.45,color='gray', marker='s',fillstyle='none',ls='none',label='van Lent et al.')
-    ax.plot(0.9, 1.54,color='gray', marker='v',fillstyle='none',ls='none',label='Auras et al.')
-    ax.plot([0,14],[1,1],ls='--',color='black')
-    ax.axis([0,14,0,2.5])
-    ax.tick_params(top=True, direction='in')  
-    ax.tick_params(right=True, direction='in')
-    plt.legend(loc='lower right')
-    # plt.title('BAratio')
-    plt.ylabel('B-type/A-type cross section ratio')
-    plt.xlabel('Energy (kJ/mol)')
-    if save_figs:
-        plt.savefig(savefolder+'BAratio.png',dpi=500)
-        plt.savefig(savefolder+'BAratio.eps')
-    plt.show()
-    plt.close()
+    # #calculate cross section and calculate BA ratio, plot BA ratio
+    # fig, ax = plt.subplots()
+    # for dataset in datalist:
+    #     dataset.calc_cross_section()
+    #     dataset.save_crossec_s0(folderstart+'D2 sticking probability as a function of step density and kinetic energy/Crossec/')
+    #     dataset.calc_BAratio()
+    #     print(dataset.E_avg, dataset.BAratio)
+    #     ax.scatter(dataset.E_avg,dataset.BAratio,color='black')
+    # ax.plot(-1,-1,color='black',ls='none',marker='o',label='This study') #for legend only
+    # ax.plot(0.9, 1.45,color='gray', marker='s',fillstyle='none',ls='none',label='van Lent et al.')
+    # ax.plot(0.9, 1.54,color='gray', marker='v',fillstyle='none',ls='none',label='Auras et al.')
+    # ax.plot([0,14],[1,1],ls='--',color='black')
+    # ax.axis([0,14,0,2.5])
+    # ax.tick_params(top=True, direction='in')  
+    # ax.tick_params(right=True, direction='in')
+    # plt.legend(loc='lower right')
+    # # plt.title('BAratio')
+    # plt.ylabel('B-type/A-type cross section ratio')
+    # plt.xlabel('Energy (kJ/mol)')
+    # if save_figs:
+    #     plt.savefig(savefolder+'BAratio.png',dpi=500)
+    #     plt.savefig(savefolder+'BAratio.eps')
+    # plt.show()
+    # plt.close()
 
     # #FIGURE 3
     # #plot cross section for each position individually
@@ -111,19 +111,19 @@ def main():
     # # # plot cross section as a function of step density
     # plot_cross_section_stepdensity(datalist, save=save_figs)
    
-     # #SUPPLEMENTARY
-    plot_individual_cross_section(datalist, save=save_figs)
+    #  # #SUPPLEMENTARY
+    # plot_individual_cross_section(datalist, save=save_figs)
    
-    # # #SUPPLEMENTARY
-    # # #plot temperature dependence
+    # #SUPPLEMENTARY
+    # #plot temperature dependence
     # plot_vs_temperature(save=save_figs)
 
-    # #SUPPLEMENTARY
-    # #hard cube comparison
+    # # SUPPLEMENTARY
+    # # hard cube comparison
     # plot_cross_section_E_hardcube(datalist,[6,12], save=save_figs)
 
-    # # #SUPPLEMENTARY
-    # # #compare to irenes cross section
+    # #SUPPLEMENTARY
+    # #compare to irenes cross section
     # compare_irene(datalist,save=save_figs)
     
     
@@ -552,7 +552,7 @@ def plot_s0_vs_E(datalist, use_stepdens=True, save=False, max_E=14):
     stepdensities = np.array(list(dic.keys()))
     max_density = np.max(np.absolute(stepdensities))
     def to_color(step_density):
-        return cm.RdBu(step_density/max_density*0.5+0.5)
+        return cm.RdBu(step_density/max_density*0.5+0.5) #*0.5 + 0.5 to take only one half of the colormap for positive step densities, and one half for negative step densities
     
     #plot
     fig, axes = plt.subplots(4,1,sharex='col',figsize=(8,10))
@@ -849,7 +849,7 @@ def plot_energy_dist(datalist):
 """
 FIT FUNCTION
 """
-def fit_all_slopes(datalist, fitrange=2.0, center_guess=20, no_offset=False,save=False):
+def fit_all_slopes(datalist, fitrange=2.0, center_guess=20, no_offset=False,save=False, plot=False):
     def residuals(fitparams):
         """
         fitparams = [center, slopeleft1, sloperight1, offset1, slopeleft2, sloperight2, etc]
@@ -933,13 +933,16 @@ def fit_all_slopes(datalist, fitrange=2.0, center_guess=20, no_offset=False,save
                        +str(fitrange)+'.txt', np.column_stack((posleft-center, dataleft)), header='position left (mm), s0 fit left')
             np.savetxt(savefolder+str(np.round(dataset.E_avg,decimals=1))+'_fitright_range_'
                        +str(fitrange)+'.txt', np.column_stack((posright-center, dataright)), header='position right (mm), s0 fit right')
-        plt.plot(posleft, dataleft, c=dataset.color)
-        plt.plot(posright, dataright, c=dataset.color)    
-        plt.scatter(dataset.pos,dataset.data, c=dataset.color)
-    plt.axis([None,None,0,0.5])
-    plt.savefig(savefolder+'fitted.png',dpi=500)
-    plt.show()
-    plt.close()
+        
+        if plot:
+            plt.plot(posleft, dataleft, c=dataset.color)
+            plt.plot(posright, dataright, c=dataset.color)    
+            plt.scatter(dataset.pos,dataset.data, c=dataset.color)
+    if plot:
+        plt.axis([None,None,0,0.5])
+        plt.savefig(savefolder+'fitted.png',dpi=500)
+        plt.show()
+        plt.close()
     
     center=result.x[0]
     slopeleft=result.x[1::3]

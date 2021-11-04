@@ -7,7 +7,7 @@ from scipy.optimize import curve_fit
 ################ General Parameters #################
 
 folderstart = "C:/Users/jansenc3/surfdrive/"
-folderstart = "C:/Users/Werk/Surfdrive/"
+# folderstart = "C:/Users/Werk/Surfdrive/"
 folder = folderstart+"DATA/Power and wavelength data/"
 timecmap = cm.viridis
 
@@ -68,7 +68,7 @@ year = '2021'
 month = '06'
 day = '01'
 timedic = {'start1':'13:06:57',
-           'stop1':'14:53:57'}
+           'stop1':'17:12:00'}
 refwl = 4252.71
 wl_window = 0.015
 lens = False
@@ -109,9 +109,33 @@ lens = False
 # wl_window = 0.006
 # lens = True
 
+#0.5 mL/min measurement for signal vs power, with RAP alignment the same as the measurement on 11/6/21
+offresonance = 2.65
+min_power = 0.005
+year = '2021'
+month = '09'
+day = '21'
+timedic = {'start1':'13:36:30',
+           'stop1':'16:00:00'}
+refwl = 4255.48
+wl_window = 0.011
+lens = True
+
+#1 mL/min CO2 and 25 mL/min He 
+offresonance = 3.42
+min_power = 0.0045
+year = '2021'
+month = '09'
+day = '28'
+timedic = {'start1':'13:12:00',
+           'stop1':'17:00:00'}
+refwl = 4255.482
+wl_window = 0.007
+lens = True
+
 months = {'01':'Jan', '02':'Feb', '03':'Mar', '04':'Apr', '05':'May', '06':'Jun', '07':'Jul', '08':'Aug', '09':'Sep', '10':'Oct', '11':'Nov', '12':'Dec'}
 savefolder = (folderstart+'DATA/'+str(year)+'/'+month+' '+months[month]+'/'+year[-2:]+month+day+'/Laser/Images/')
-save = False
+save = True
 
 ################ Main #################
 
@@ -334,7 +358,7 @@ def fit_lockin_vs_power(power,lockin,timestamparray, function='exp',fixzero=Fals
     elif function=='exp_pol':
         func = exp_pol
         e_guess = 0.5
-        n_guess = -0.1
+        n_guess = -0.08 #-0.1 for older data
         guess = [A_guess,b_guess,c_guess,d_guess, e_guess, n_guess]
 
     bounds_min = np.full(len(guess),-np.inf)
@@ -345,14 +369,14 @@ def fit_lockin_vs_power(power,lockin,timestamparray, function='exp',fixzero=Fals
         bounds_max[2]=1.001*c_guess
         bounds_min[3]=0.999*d_guess
         bounds_max[3]=1.001*d_guess
-    
+
+    plt.plot(power,lockin,'o',markersize=2,label='Data',c='gray')
+    plt.plot(power,func(power,*guess),'.',markersize=0.5,label='guess',c='b')
 
     popt = curve_fit(func, power,lockin,p0=guess,bounds=(bounds_min,bounds_max))
     max_signal = func(100000, *popt[0])
     print(popt[0])
 
-    plt.plot(power,lockin,'o',markersize=2,label='Data',c='gray')
-    plt.plot(power,func(power,*guess),'.',markersize=0.5,label='guess',c='b')
     plt.plot(power,func(power,*popt[0]),'o',markersize=2,label='Fit ('+function+')',c='r')
     plt.plot(power,np.full(len(power),max_signal),'--',c='black',label='max excitation')
     plt.plot(power,np.full(len(power),offresonance),'--',c='gray',label='no excitation')
