@@ -2,6 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
 import datetime as dt
+import os
 
 #Measurement parameters
 #100K
@@ -35,48 +36,301 @@ file='kw01'
 start=1
 stop=100
 
+# 85K, with laser modulation measured
+folder = '2021/11 Nov/211104/KW/'
+file = 'kw01'
+onresonance = True
+modulation_frequency = 1 #Hz
+start = 200
+stop = 700
+subsavefolder = ''
+typ = 'lin' #for fitting
+measured_laser = True
+laserfile = 'lasermodulation01'
+max_timeshift = 100
+
+# # 85K, with laser modulation measured
+# folder = '2021/11 Nov/211104/KW/'
+# file = 'kw02'
+# onresonance = True
+# modulation_frequency = 2 #Hz
+# start = 200
+# stop = 800
+# subsavefolder = ''
+# typ = 'log' #for fitting
+# b_guess = -0.01 #for fitting, change if it does not work
+# measured_laser = True
+# laserfile = 'lasermodulation02'
+# max_timeshift = 1.5
+
+# 85K, with laser modulation measured
+folder = '2021/11 Nov/211105/KW/'
+file = 'kw01'
+onresonance = True
+modulation_frequency = 2 #Hz
+start = 100 #cannot be 0 for some reason
+stop = 1700
+subsavefolder = ''
+measured_laser = True
+max_timeshift = 2
+UTI = True
+
+# 85K, laser not entering the chamber
+folder = '2021/11 Nov/211108/KW/'
+file = 'kw02'
+onresonance = False
+modulation_frequency = 2 #Hz
+start = 100 #cannot be 0 for some reason
+stop = 1450
+subsavefolder = ''
+measured_laser = True
+max_timeshift = 2
+UTI = True
+# 85K, laser off resonance but entering chamber
+file = 'kw03'
+# # beam not entering chamber, laser off
+# file = 'test01'
+# # beam not entering chamber, laser off resonance but entering chamber
+# file = 'test02'
+
+# 95K, no laser, testing UTI pc measurement
+folder = '2021/11 Nov/211111/KW/'
+file = 'KW04'
+onresonance = False
+modulation_frequency = 3 #Hz
+start = 60 #cannot be 0 for some reason
+stop = 500
+subsavefolder = ''
+measured_laser = False
+max_timeshift = 2
+UTI = True
+
+# 85K
+folder = '2021/11 Nov/211112/KW/'
+onresonance = False
+modulation_frequency = 3 #Hz
+start = 50 #cannot be 0 for some reason
+stop = 850
+subsavefolder = ''
+measured_laser = True
+max_timeshift = 2
+UTI = True
+#Laser on resonance, damping
+file = 'KW03'
+#laser on resonance, no damping
+file = 'KW02'
+#laser off, no damping
+file = 'KW01'
+#laser off resonance, damping
+file = 'KW04'
+# laser on resonance, damping
+file = 'KW05'
+
+# 85K
+folder = '2021/11 Nov/211115/KW/'
+onresonance = False
+modulation_frequency = 5 #Hz
+start = 50 #cannot be 0 for some reason
+stop = 850
+subsavefolder = ''
+measured_laser = True
+max_timeshift = 1
+UTI = True
+#Laser on resonance, damping
+file = 'KW01'
+#Laser off resonance, damping
+file = 'KW02'
+
+# On cryostat, ~77K
+folder = '2022/01 Jan/220114/KW/'
+onresonance = False
+modulation_frequency = 5 #Hz
+start = 50 #cannot be 0 for some reason
+stop = 450
+subsavefolder = ''
+measured_laser = True
+max_timeshift = 1
+UTI = True
+#test measurement for noise spectrum of the new uti controller
+file = 'test'
+#off and on resonance???
+file = 'KW01'
+#off resonance
+file = 'KW02'
+# #on resonance
+# file = 'KW03'
+
+
+
 ################ General Parameters #################
 
+timediff = 2082844800 #difference between 1-1-1904 (labview) and 1-1-1970 (everything else)
 folderstart = "C:/Users/jansenc3/surfdrive/DATA/"
 # folderstart = "C:/Users/Werk/Surfdrive/DATA/"
 ext = '.txt'
+subsavefolder = '' #include / !
 savefolder = folderstart+folder+file+'/'+subsavefolder
 plot_all=True
-save_all=False
+save_all=True
 
 #Script
 def main():
-    time, data = np.loadtxt(folderstart+folder+file+ext,skiprows=3,unpack=True)
-    plt.plot(time,data)
-    if save_all:
-        if not os.path.exists(savefolder):
-            os.makedirs(savefolder)
-        plt.savefig(savefolder+'all_data.png',dpi=500)
-    plt.show()
-    plt.close()
-    time, data = remove_beginend(time, data, start=start,stop=stop, plot=plot_all)
+    if UTI:
+        if measured_laser:
+            time, data_laser, data = np.loadtxt(folderstart+folder+file+ext,skiprows=3,unpack=True)
+        else:
+            time, data = np.loadtxt(folderstart+folder+file+ext,skiprows=3,unpack=True)
+        time -= time[0]
 
-    level_data = remove_background(time,data,typ='log')
-    stacked_time = stack_data(time, modulation_frequency)
+
+
+        plt.plot(time,data)
+        if save_all:
+            if not os.path.exists(savefolder):
+                os.makedirs(savefolder)
+            plt.savefig(savefolder+'all_data.png',dpi=500)
+        plt.show()
+        plt.close()
+
+        if not measured_laser:
+            time, data = remove_UTInoise(time, data, factor=1.2)
+
+        #randomize array
+        # rng = np.random.default_rng()
+        # rng.shuffle(data)
+        # # data += 0.001*time
+        # # data = 2+4*np.random.rand(len(time))
+
+
+        time_cut, data = remove_beginend(time, data, start=start,stop=stop, plot=False) 
+        plt.plot(time_cut,data)
+        if save_all:
+            plt.savefig(savefolder+'cut_data.png',dpi=500)
+        plt.show()
+        plt.close()
+
+        samplingrate = 100 #Hz
+        artificialsampling = np.arange(np.min(time_cut), np.max(time_cut), 1/samplingrate) 
+        data_fft = np.interp(artificialsampling, time_cut, data)
+
+
+        fft = np.fft.rfft(data_fft)
+        fftfreq = np.fft.rfftfreq(len(data_fft), 1/samplingrate)
+        np.savetxt(savefolder+'fft.txt', np.column_stack((fftfreq.astype(float), np.absolute(fft))), header='Freq, y')
+        plt.plot(fftfreq, np.abs(fft))
+        x_min = 0
+        x_max =10
+        plt.axis([x_min, x_max,0,50])
+        plt.grid()
+        plt.xlabel('Freq (Hz)')
+        plt.title('Signal FFT')
+        if save_all:
+            plt.savefig(savefolder+'fft'+str(x_min)+'_'+str(x_max)+'.png',dpi=500)
+        plt.show()
+        plt.close()
+
+        if measured_laser:
+            data_laser_fft = np.interp(artificialsampling, time, data_laser)
+            fft = np.fft.rfft(data_laser_fft)
+            fftfreq = np.fft.rfftfreq(len(data_laser_fft), 1/samplingrate)
+            np.savetxt(savefolder+'fft_laser.txt', np.column_stack((fftfreq.astype(float), np.absolute(fft))), header='Freq, y')
+            plt.plot(fftfreq, np.abs(fft))
+            plt.grid()
+            plt.axis([x_min, x_max,0,None])
+            plt.xlabel('Freq (Hz)')
+            plt.title('Laser FFT')
+            if save_all:
+                plt.savefig(savefolder+'fft_laser'+str(x_min)+'_'+str(x_max)+'.png',dpi=500)
+            plt.show()
+            plt.close()
+
+
+
+
+        if measured_laser:
+            difference_array = []
+            timeshiftarray = np.arange(-max_timeshift,max_timeshift,0.01)
+            for timeshift in timeshiftarray:
+                bool_laser = convert_bool_lasermodulation(time, data_laser, time_cut+timeshift)
+                # print (len(data[bool_laser]), len(data[np.invert(bool_laser)]))
+                difference = np.average(data[bool_laser]) - np.average(data[np.invert(bool_laser)])
+                difference_array.append(difference)
+            plt.plot(timeshiftarray, difference_array)
+            plt.grid(linestyle='--')
+            plt.xlabel('Timeshift (s)')
+            plt.ylabel('difference on/off resonance')
+            if save_all:
+                plt.savefig(savefolder+'difference_'+str(start)+'-'+str(stop)+'_'+str(max_timeshift)+'.png',dpi=500)
+            plt.show()
+            plt.close()
+
+
+
+#for older data only
+    else:
+        time, data = np.loadtxt(folderstart+folder+file+ext,skiprows=3,unpack=True)
+        with open(folderstart+folder+file+ext, 'r') as qs_file:
+            starttime = float(qs_file.readlines()[1])
+        if measured_laser:
+            time_laser, data_laser = np.loadtxt(folderstart+folder+laserfile+ext,unpack=True)
+            time_laser -= timediff
+        plt.plot(time,data)
+        if save_all:
+            if not os.path.exists(savefolder):
+                os.makedirs(savefolder)
+            plt.savefig(savefolder+'all_data.png',dpi=500)
+        plt.show()
+        plt.close()
+        time, data = remove_beginend(time, data, start=start,stop=stop, plot=False)
+        level_data = remove_background(time,data,typ=typ)
+
+        difference_array = []
+        timeshiftarray = np.arange(-max_timeshift,max_timeshift,0.01)
+        for timeshift in timeshiftarray:
+            bool_laser = convert_bool_lasermodulation(time_laser, data_laser, time+starttime+timeshift)
+            difference = np.average(level_data[bool_laser]) - np.average(level_data[np.invert(bool_laser)])
+            difference_array.append(difference)
+            # plt.plot(time[bool_laser], level_data[bool_laser], '.')
+            # plt.plot(time[np.invert(bool_laser)], level_data[np.invert(bool_laser)], '.')
+            # plt.show()
+            # plt.close()
+        plt.plot(timeshiftarray, difference_array)
+        plt.xlabel('Timeshift (s)')
+        plt.ylabel('difference on/off resonance')
+        if save_all:
+            plt.savefig(savefolder+'difference_'+str(start)+'-'+str(stop)+'_'+str(max_timeshift)+'.png',dpi=500)
+        plt.show()
+        plt.close()
     
-    plt.plot(stacked_time, level_data, '.')
-    plt.plot(stacked_time,np.full(len(stacked_time),np.average(level_data)))
-    if save_all:
-        plt.savefig(savefolder+'stacked_data.png',dpi=500)
-    plt.show()
-    plt.close()
 
-    averaged_data, std = average_data(stacked_time,level_data)
-    plt.errorbar(np.unique(stacked_time), averaged_data, yerr=std, capsize=5, marker='o',ls='')
-    if save_all:
-        plt.savefig(savefolder+'averaged_data.png',dpi=500)
-    plt.show()
-    plt.close()
+    #BELOW HERE IS THE OLD CODE, WHICH IS NOT USED ANYMORE
+    # stacked_time = stack_data(time, modulation_frequency)
+    
+    # plt.plot(stacked_time, level_data, '.')
+    # plt.plot(stacked_time,np.full(len(stacked_time),np.average(level_data)))
+    # if save_all:
+    #     plt.savefig(savefolder+'stacked_data.png',dpi=500)
+    # plt.show()
+    # plt.close()
 
-    find_wave(stacked_time, level_data)
+    # averaged_data, std = average_data(stacked_time,level_data)
+    # plt.errorbar(np.unique(stacked_time), averaged_data, yerr=std, capsize=5, marker='o',ls='')
+    # if save_all:
+    #     plt.savefig(savefolder+'averaged_data.png',dpi=500)
+    # plt.show()
+    # plt.close()
+
+    # find_wave(stacked_time, level_data)
 
 
     print('the end')
+
+def remove_UTInoise(time, data, factor=2):
+    remove1 = np.argwhere(data > factor*np.roll(data,1))
+    remove2 = np.argwhere(data > factor*np.roll(data,-1))
+    remove = np.concatenate((remove1, remove2))
+    return np.delete(time, remove), np.delete(data, remove)
+
 
     
 def remove_beginend(time, data, start=None, stop=None, begin_s=10, end_s=2, plot=True):
@@ -98,7 +352,6 @@ def remove_beginend(time, data, start=None, stop=None, begin_s=10, end_s=2, plot
         plt.show()
         plt.close()
     return time[total], data[total]
-
 
 
 def remove_background(time, data, typ='log', plot=True):
@@ -134,6 +387,12 @@ def remove_background(time, data, typ='log', plot=True):
             plt.close()
         return data - (a*time+b)
 
+
+def convert_bool_lasermodulation(time_laser, data_laser, time_kw):
+    interpolated_laser = np.interp(time_kw, time_laser, data_laser)
+    thresh = np.average(data_laser)
+    bool_laser = interpolated_laser > thresh
+    return bool_laser
 
 def stack_data(time, freq):
     print('stack_data')
