@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
 import datetime as dt
 import os
+# import colorednoise as cn
 
 #Measurement parameters
 #100K
@@ -43,7 +44,7 @@ onresonance = True
 modulation_frequency = 1 #Hz
 start = 200
 stop = 700
-subsavefolder = ''
+
 typ = 'lin' #for fitting
 measured_laser = True
 laserfile = 'lasermodulation01'
@@ -56,7 +57,7 @@ max_timeshift = 100
 # modulation_frequency = 2 #Hz
 # start = 200
 # stop = 800
-# subsavefolder = ''
+
 # typ = 'log' #for fitting
 # b_guess = -0.01 #for fitting, change if it does not work
 # measured_laser = True
@@ -70,7 +71,7 @@ onresonance = True
 modulation_frequency = 2 #Hz
 start = 100 #cannot be 0 for some reason
 stop = 1700
-subsavefolder = ''
+
 measured_laser = True
 max_timeshift = 2
 UTI = True
@@ -82,7 +83,7 @@ onresonance = False
 modulation_frequency = 2 #Hz
 start = 100 #cannot be 0 for some reason
 stop = 1450
-subsavefolder = ''
+
 measured_laser = True
 max_timeshift = 2
 UTI = True
@@ -100,7 +101,7 @@ onresonance = False
 modulation_frequency = 3 #Hz
 start = 60 #cannot be 0 for some reason
 stop = 500
-subsavefolder = ''
+
 measured_laser = False
 max_timeshift = 2
 UTI = True
@@ -111,7 +112,7 @@ onresonance = False
 modulation_frequency = 3 #Hz
 start = 50 #cannot be 0 for some reason
 stop = 850
-subsavefolder = ''
+
 measured_laser = True
 max_timeshift = 2
 UTI = True
@@ -132,7 +133,6 @@ onresonance = False
 modulation_frequency = 5 #Hz
 start = 50 #cannot be 0 for some reason
 stop = 850
-subsavefolder = ''
 measured_laser = True
 max_timeshift = 1
 UTI = True
@@ -145,9 +145,8 @@ file = 'KW02'
 folder = '2022/01 Jan/220114/KW/'
 onresonance = False
 modulation_frequency = 5 #Hz
-start = 50 #cannot be 0 for some reason
+start = 75 #cannot be 0 for some reason
 stop = 450
-subsavefolder = ''
 measured_laser = True
 max_timeshift = 1
 UTI = True
@@ -158,8 +157,31 @@ file = 'KW01'
 #off resonance
 file = 'KW02'
 # #on resonance
-# file = 'KW03'
+file = 'KW03'
 
+# #Noise spectrum test of the new pressure gauge
+# folder = '2022/03 Mar/220307/Pressuregauge/'
+# onresonance = False
+# modulation_frequency = 5 #Hz
+# start = 1 #cannot be 0 for some reason
+# stop = 450
+# measured_laser = True
+# max_timeshift = 1
+# UTI = True
+# #test measurement for noise spectrum of the new uti controller
+# file = 'Without_shielding'
+
+# #Noise spectrum test of the new pressure gauge
+# folder = '2022/04 Apr/220404/KW/'
+# onresonance = False
+# modulation_frequency = 5 #Hz
+# start = 1 #cannot be 0 for some reason
+# stop = 450
+# measured_laser = True
+# max_timeshift = 1
+# UTI = True
+# #test measurement for noise spectrum of the new uti controller
+# file = 'test_FFT3'
 
 
 ################ General Parameters #################
@@ -172,6 +194,7 @@ subsavefolder = '' #include / !
 savefolder = folderstart+folder+file+'/'+subsavefolder
 plot_all=True
 save_all=True
+use_dummydata = False
 
 #Script
 def main():
@@ -209,18 +232,20 @@ def main():
         plt.show()
         plt.close()
 
+
+        #CALCULATE FFT
         samplingrate = 100 #Hz
         artificialsampling = np.arange(np.min(time_cut), np.max(time_cut), 1/samplingrate) 
         data_fft = np.interp(artificialsampling, time_cut, data)
 
-
-        fft = np.fft.rfft(data_fft)
         fftfreq = np.fft.rfftfreq(len(data_fft), 1/samplingrate)
-        np.savetxt(savefolder+'fft.txt', np.column_stack((fftfreq.astype(float), np.absolute(fft))), header='Freq, y')
+        fft = np.fft.rfft(data_fft)
+
+        np.savetxt(savefolder+'fft_'+str(start)+'_'+str(stop)+'.txt', np.column_stack((fftfreq.astype(float), np.absolute(fft))), header='Freq, y')
         plt.plot(fftfreq, np.abs(fft))
         x_min = 0
-        x_max =10
-        plt.axis([x_min, x_max,0,50])
+        x_max =50
+        plt.axis([x_min, x_max,0,5])
         plt.grid()
         plt.xlabel('Freq (Hz)')
         plt.title('Signal FFT')
@@ -233,10 +258,10 @@ def main():
             data_laser_fft = np.interp(artificialsampling, time, data_laser)
             fft = np.fft.rfft(data_laser_fft)
             fftfreq = np.fft.rfftfreq(len(data_laser_fft), 1/samplingrate)
-            np.savetxt(savefolder+'fft_laser.txt', np.column_stack((fftfreq.astype(float), np.absolute(fft))), header='Freq, y')
+            np.savetxt(savefolder+'fft_laser_'+str(start)+'_'+str(stop)+'.txt', np.column_stack((fftfreq.astype(float), np.absolute(fft))), header='Freq, y')
             plt.plot(fftfreq, np.abs(fft))
             plt.grid()
-            plt.axis([x_min, x_max,0,None])
+            plt.axis([x_min, x_max,0,100])
             plt.xlabel('Freq (Hz)')
             plt.title('Laser FFT')
             if save_all:
@@ -246,21 +271,35 @@ def main():
 
 
 
-
+        #CALCULATE DIFFERENCE
         if measured_laser:
             difference_array = []
             timeshiftarray = np.arange(-max_timeshift,max_timeshift,0.01)
+            filenameaddition = ''
+            if use_dummydata:
+                #input values
+                beta = 1         # the exponent: 0=white noite; 1=pink noise;  2=red noise (also "brownian noise")
+                samples = len(time_cut)  # number of samples to generate (time series extension)
+                #Deffing some colores
+                data = cn.powerlaw_psd_gaussian(beta, samples)
+                filenameaddition = str(data[0]) #random number so figure is not overwritten when rerunning the code
+                data = dummydata(time_cut)
+
             for timeshift in timeshiftarray:
+                # bool_laser has the same length as time_cut, but a different part of the laser modulation signal is selected each time by convert_bool_lasermodulation.
+                # It is used as a data mask for the same dataset each time. Just the shape of the data mask is different. 
                 bool_laser = convert_bool_lasermodulation(time, data_laser, time_cut+timeshift)
                 # print (len(data[bool_laser]), len(data[np.invert(bool_laser)]))
                 difference = np.average(data[bool_laser]) - np.average(data[np.invert(bool_laser)])
                 difference_array.append(difference)
+            np.savetxt(savefolder+'timeshift_'+str(start)+'_'+str(stop)+filenameaddition+'.txt', np.column_stack((timeshiftarray,difference_array)), header='timeshift, difference (V)')
             plt.plot(timeshiftarray, difference_array)
+            plt.plot([-timeshift, timeshift],[0,0], color='black')
             plt.grid(linestyle='--')
             plt.xlabel('Timeshift (s)')
             plt.ylabel('difference on/off resonance')
             if save_all:
-                plt.savefig(savefolder+'difference_'+str(start)+'-'+str(stop)+'_'+str(max_timeshift)+'.png',dpi=500)
+                plt.savefig(savefolder+'difference_'+str(start)+'-'+str(stop)+'_'+str(max_timeshift)+filenameaddition+'.png',dpi=500)
             plt.show()
             plt.close()
 
@@ -303,27 +342,39 @@ def main():
         plt.close()
     
 
-    #BELOW HERE IS THE OLD CODE, WHICH IS NOT USED ANYMORE
-    # stacked_time = stack_data(time, modulation_frequency)
-    
-    # plt.plot(stacked_time, level_data, '.')
-    # plt.plot(stacked_time,np.full(len(stacked_time),np.average(level_data)))
-    # if save_all:
-    #     plt.savefig(savefolder+'stacked_data.png',dpi=500)
-    # plt.show()
-    # plt.close()
+        #BELOW HERE IS THE OLD CODE, WHICH IS NOT USED ANYMORE
+        # stacked_time = stack_data(time, modulation_frequency)
+        
+        # plt.plot(stacked_time, level_data, '.')
+        # plt.plot(stacked_time,np.full(len(stacked_time),np.average(level_data)))
+        # if save_all:
+        #     plt.savefig(savefolder+'stacked_data.png',dpi=500)
+        # plt.show()
+        # plt.close()
 
-    # averaged_data, std = average_data(stacked_time,level_data)
-    # plt.errorbar(np.unique(stacked_time), averaged_data, yerr=std, capsize=5, marker='o',ls='')
-    # if save_all:
-    #     plt.savefig(savefolder+'averaged_data.png',dpi=500)
-    # plt.show()
-    # plt.close()
+        # averaged_data, std = average_data(stacked_time,level_data)
+        # plt.errorbar(np.unique(stacked_time), averaged_data, yerr=std, capsize=5, marker='o',ls='')
+        # if save_all:
+        #     plt.savefig(savefolder+'averaged_data.png',dpi=500)
+        # plt.show()
+        # plt.close()
 
-    # find_wave(stacked_time, level_data)
+        # find_wave(stacked_time, level_data)
 
 
     print('the end')
+
+def dummydata(time):
+    data = np.zeros(len(time))
+    for freq in np.arange(0.1,100,0.1):
+        phase = np.random.random()*2*np.pi
+        phase = 0
+        data += 1/freq*np.sin(2*np.pi*freq*time+phase)
+    return data
+
+def whitenoise(time):
+    return np.random.randn(len(time))
+
 
 def remove_UTInoise(time, data, factor=2):
     remove1 = np.argwhere(data > factor*np.roll(data,1))
@@ -423,6 +474,9 @@ def find_wave_wrong(stacked_time, averaged_data):
     plt.close()
 
 def find_wave(stacked_time, level_data, timestep=0.005):
+    """
+    This is not used anymore!
+    """
     args = np.argsort(stacked_time)
     sorted_time = stacked_time[args]
     #make the array twice as long to remove boundary

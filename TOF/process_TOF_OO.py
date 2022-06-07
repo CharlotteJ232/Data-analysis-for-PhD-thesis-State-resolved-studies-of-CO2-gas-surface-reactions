@@ -42,10 +42,15 @@ experiment_list = [] #list contains tuples (data_folder, nozzle_temp, nozzle_pre
 # experiment_list.append((directory+'DATA/2021/07 Jul/210726/TOF/', 673, 4805, 0.004, 0.004, 28, 7)) #20 mL/min
 # experiment_list.append((directory+'DATA/2021/07 Jul/210727/TOF/', 573, 5340, 0.004, (0.004*25+0.044*0.5)/25.5, 0, 7)) #25.5 mL/min
 # experiment_list.append((directory+'DATA/2021/07 Jul/210727/TOF/', 573, 5340, 0.044, (0.004*25+0.044*0.5)/25.5, 7, 7)) #25.5 mL/min
-experiment_list.append((directory+'DATA/2021/09 Sep/210930/TOF/', 300, 3700, 0.004, (0.004*25+0.044*1)/26, 0, 7)) 
-experiment_list.append((directory+'DATA/2021/09 Sep/210930/TOF/', 300, 3700, 0.044, (0.004*25+0.044*1)/26, 7, 7)) 
- 
+# experiment_list.append((directory+'DATA/2021/09 Sep/210930/TOF/', 300, 3700, 0.004, (0.004*25+0.044*1)/26, 0, 7)) 
+# experiment_list.append((directory+'DATA/2021/09 Sep/210930/TOF/', 300, 3700, 0.044, (0.004*25+0.044*1)/26, 7, 7)) 
+experiment_list.append((directory+'DATA/2022/03 Mar/220321/TOF/', 300, 3585, 0.004, (0.004*25+0.044*1)/26, 0, 7)) 
+experiment_list.append((directory+'DATA/2022/03 Mar/220321/TOF/', 300, 3585, 0.044, (0.004*25+0.044*1)/26, 7, 7)) 
+
 data_positions = [0, 46, 35, 25, 15, 5, 0] #positions on moving stage (mm), corresponding to number of dataset above
+
+L_setup = 567 #mm for the UTI
+L_setup = 587 #mm for the 125 (guess)
 
 measured_chopper_freq = False
 chopper_freq = 253 #Hz
@@ -53,7 +58,7 @@ data_vext = np.ones(len(data_positions)) #not used now, but I am too lazy to rem
 savefolder = ''
 peak_fraction_gauss_fit = 1/3 #top fraction of the peak used for the gaussian fit to guess ts
 
-increase_fit_bounds = 1 #increases the fitparameter bound range by this factor. If you use this, check if the path length is not fitted to an incorrect value
+increase_fit_bounds = 1.5 #increases the fitparameter bound range by this factor. If you use this, check if the path length is not fitted to an incorrect value
 
 def main():
 
@@ -113,7 +118,7 @@ class Experiment:
         # self.plot_raw_data()
         
         #Guessed parameters of the time/velocity distribution
-        self.L_guess = 567 #mm
+        self.L_guess = L_setup
         
         self.E_guess = 2.5*8.314*self.nozzle_temp #for perfect expansion
         self.v_guess = np.sqrt(2*self.E_guess/self.avg_mass) #for perfect expansion
@@ -139,7 +144,6 @@ class Experiment:
         self.params += [self.B_guess for i in range(len(self.datadict))]
         self.params += [self.L_guess, self.v0_guess, self.ts_guess, self.alpha_guess]
         self.params = np.array(self.params)
-        
 
         
     def read_datasets(self, dataid):

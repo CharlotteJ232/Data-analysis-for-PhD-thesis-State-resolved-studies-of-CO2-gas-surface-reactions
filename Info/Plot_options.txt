@@ -17,14 +17,19 @@ AXIS SCALE AND LIMITS:
 ax11.set_xlim(xmin,xmax)
 ax11.set_xscale('log')
 secax11 = ax11.secondary_xaxis('top', funtions=(conversion, inverse)) (linked secondary axis)
+plt.yticks(np.linspace(axis[2],axis[3],5))
 
-TICKS AND LABELS:
+TICKS:
 https://matplotlib.org/api/_as_gen/matplotlib.pyplot.tick_params.html
-https://brohrer.github.io/matplotlib_ticks.html
 ax11.tick_params(top=True, labelleft=False, direction='inout')
 ax11.tick_params(axis='x', direction='in', length=5, width=2, color='black')
 ax11.tick_params(axis='y', labelsize=10, labelrotation=45, labelcolor='black')
+minor ticks
 ax11.xaxis.set_minor_locator(AutoMinorLocator())
+ax.xaxis.set_major_locator(MultipleLocator(20)) #zet ze op stappen van 20
+ax.tick_params(which='minor', right=True, direction='in')
+
+AXIS LABELS
 ax11.set_xlabel('label')
 
 
