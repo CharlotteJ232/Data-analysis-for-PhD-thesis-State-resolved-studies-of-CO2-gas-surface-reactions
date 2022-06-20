@@ -22,7 +22,7 @@ simulationsfolder = folderstart+'DATA/Laser/Simulations/CO2/220517/'
 simulationsfolder = folderstart+'DATA/Laser/Simulations/CO2/220603/'
 savefolder = folderstart+'DATA/Rotational state distribution/Images/Newsimulations/Withrotations/'
 savefolder = simulationsfolder
-save=True
+save=False
 fun = 'dbl_exp'
 cmap = 'viridis'
 
@@ -35,6 +35,7 @@ datainfo = { 'R0':{'year':'2022', 'month':'02', 'day':'24', 'min_power':0.005}, 
             }
 
 transitions = ['R0', 'R2', 'R4', 'R6', 'R8', 'R10']
+fitparameter_index =np.arange(1,12,2)     # x_guess: w_power, pmin, A, pmin, A, etc
 # transitions = ['R0', 'R2', 'R4']
 
 months = {'01':'Jan', '02':'Feb', '03':'Mar', '04':'Apr', '05':'May', '06':'Jun', '07':'Jul', '08':'Aug', '09':'Sep', '10':'Oct', '11':'Nov', '12':'Dec'}
@@ -51,11 +52,11 @@ def main():
     for transition in transitions:
         data = datadic[transition]
         datadic[transition] = normalize_shift_PED_signal(data, datainfo[transition]['min_power'], window_loss=0.1)
-    # plot_single(datadic,'R2')
-    # plot_all_normalized(datadic) 
+    plot_single(datadic,'R2', include_fit=False)
+    plot_all_normalized(datadic) 
     # plot_all_separately(datadic)
-    # rotational_temperature(datadic)
-    plot_all_data_simulations(datadic)
+    rotational_temperature(datadic)
+    # plot_all_data_simulations(datadic)
 
 
 
@@ -64,27 +65,34 @@ def main():
 
 def read_all():
     datadic = {} 
-    for transition in transitions:
+    for transition, index in zip(transitions, fitparameter_index):
         info = datainfo[transition]
         folder = (folderstart+'DATA/'+info['year']+'/'+info['month']+' '+months[info['month']]+'/'+info['year'][-2:]+info['month']+info['day']+'/Laser/Images/'+transition+'/')    
         datadic[transition] = {}
         datadic[transition]['power'], datadic[transition]['lockin'] = np.loadtxt(folder+'lockin_vs_power.txt', unpack=True)
         datadic[transition]['offresonance'] = np.loadtxt(folder+'lockin_offresonance.txt')
         datadic[transition]['popt'] = np.loadtxt(folder+'fitparameters_'+fun+'.txt')
+        datadic[transition]['w_power'] = np.loadtxt(simulationsfolder+'x.txt')[0]
+        datadic[transition]['pmin'] = np.loadtxt(simulationsfolder+'x.txt')[index]
+        datadic[transition]['A'] = np.loadtxt(simulationsfolder+'x.txt')[index+1]
 
         datadic[transition]['simulation_power'], datadic[transition]['simulation'] = np.loadtxt(simulationsfolder+transition+'_averaged.txt', unpack=True)
         # datadic[transition]['simulation_power'], datadic[transition]['simulation'] = np.loadtxt(simulationsfolder+transition+'/averaged.txt', unpack=True)
 
     return datadic
 
-def plot_single(datadic, transition):
+
+
+
+def plot_single(datadic, transition, include_fit=True):
     data = datadic[transition]
     color = grayscale(transition, typ=cmap)
     fig, ax = plt.subplots()
     ax.plot(data['power']*1000, data['lockin'],'.',markersize=2, color=color, label='PED data '+transition)
-    ax.plot(data['power'][data['sort']]*1000, dbl_exp(data['power'][data['sort']],*data['popt']), color='black', label='Fit')
-    ax.plot([-100,100], [data['max'],data['max']], '--', color='black')
-    ax.plot([-100,100], [data['offresonance'],data['offresonance']], '--', color='gray')
+    if include_fit:
+        ax.plot(data['power'][data['sort']]*1000, dbl_exp(data['power'][data['sort']],*data['popt']), color='black', label='Fit')
+        ax.plot([-100,100], [data['max'],data['max']], '--', color='black')
+    ax.plot([-100,100], [data['offresonance'],data['offresonance']], '--', color='gray', label='Off resonance signal')
     ax.set_xlim(0, 35)
     ax.set_xlabel('Laser power (mW)')
     ax.set_ylabel('PED signal (V)')

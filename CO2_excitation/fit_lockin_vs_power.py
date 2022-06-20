@@ -2,7 +2,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import cm 
 import datetime as dt
-from scipy.optimize import curve_fit, least_squares
+from scipy.optimize import curve_fit, least_squares, minimize
+from joblib import Parallel, delayed
 
 datainfo = { 'R0':{'year':'2022', 'month':'02', 'day':'24', 'min_power':5}, #was 0.0036
             'R2':{'year':'2022', 'month':'03', 'day':'04', 'min_power':4.6},
@@ -20,72 +21,112 @@ A_guess = { 'R0':1.0,
             'R10':0.53134895
             }
 
-np.array([1., 0.24072303, 0.21098072, 0.2211775 , 0.30620438, 0.53134895])
+
 
 folderstart = "C:/Users/jansenc3/surfdrive/"
 folderstart = "C:/Users/Werk/Surfdrive/"
 folder = folderstart+"DATA/Power and wavelength data/"
-simulationsfolder = folderstart+'DATA/Laser/Simulations/CO2/220517/'
-simulationsfolder = folderstart+'DATA/Laser/Simulations/CO2/220603/'
+simulationsfolder = folderstart+'DATA/Laser/Simulations/CO2/220602/' #without rotation
+simulationsfolder = folderstart+'DATA/Laser/Simulations/CO2/220603/' #with rotation
 
 months = {'01':'Jan', '02':'Feb', '03':'Mar', '04':'Apr', '05':'May', '06':'Jun', '07':'Jul', '08':'Aug', '09':'Sep', '10':'Oct', '11':'Nov', '12':'Dec'}
 transitions = ['R0', 'R2', 'R4', 'R6', 'R8', 'R10']
 # transitions = ['R2']
-save=True
+save=False
 
 def main():
     print('main')
 
+    # amplitudes = []
+    # for transition in transitions:
+    #     datadic = read(transition)
+
+    #     x_guess = np.array([1.2,datainfo[transition]['min_power'],1/A_guess[transition]])
+    #     print(x_guess)
+    #     w_power, pmin, A = fit_full(datadic, x_guess, bounds=np.array([1.1,1.5,3]))
+    #     if save:
+    #         np.savetxt(simulationsfolder+transition+'_x.txt', [w_power, pmin, A])
+    #     print (pmin, w_power, A)
+    #     amplitudes.append(A)
+    #     plot_fit(transition, datadic, w_power, pmin, A, name='')
+    # print(amplitudes)
+
+    popt = fit_all()
+    x = popt.x
+    if save:
+        np.savetxt(simulationsfolder+'x.txt', x)
+    print(popt)
+    # x = [1.09090909, 4.86848057, 0.98337631, 4.32269159, 4.15274705, 3.80092913, 5.25014092, 5.10166111, 4.64286135, 4.88022767, 3.1502073, 4.4786131, 1.94651]
+    index = 1
     for transition in transitions:
         datadic = read(transition)
-        correct_offsets(transition, datadic)
-        # datadic['power'] = absolute_laser_power(datadic['power']) #corrects offset twice, change that
-        # plt.plot(datadic['power'], datadic['lockin'])
-        # plt.plot(datadic['simulation_power'], datadic['simulation'])
-        # plt.show()
-        # plt.close()
+        w_power = x[0]
+        pmin = x[index]
+        A = x[index+1]
+        index += 2
+        plot_fit(transition, datadic, w_power, pmin, A, name='_all')
 
-        # A = fit_amplitude(datadic)
-    
-        # plt.plot(datadic['power'], A*datadic['lockin'], '.')
-        # plt.plot(datadic['simulation_power'], datadic['simulation'])
-        # plt.show()
-        # plt.close()
 
-        x_guess = np.array([datainfo[transition]['min_power'],1.2,A_guess[transition]])
-        pmin, w_power, A = fit_full(datadic, x_guess, bounds=np.array([2,1.5,5]))
-        print (pmin, w_power, A)
 
-        plt.plot((datadic['power_raw']-pmin)*w_power, A*(datadic['lockin_raw']-datadic['offresonance']), '.')
+
+def plot_fit(transition, datadic, w_power, pmin, A, name=''):
+        plt.plot((datadic['power_raw']-pmin)*w_power, (datadic['lockin_raw']-datadic['offresonance'])/A, '.')
         plt.plot(datadic['simulation_power'], datadic['simulation'])
-        plt.title(transition+', pmin='+str(np.round(pmin,2))+', w_power='+ str(np.round(w_power,2))+', A='+str(np.round(A,2)))
+        plt.title(transition+', pmin='+str(np.round(pmin,3))+', w_power='+ str(np.round(w_power,3))+', A='+str(np.round(A,3)))
         plt.xlabel('Power (mW)')
         plt.ylabel('Excited population')
         if save:
-            plt.savefig(simulationsfolder+'figures/'+transition+'_fit.png')
+            plt.savefig(simulationsfolder+'figures/'+transition+'_fit'+name+'.png')
         plt.show()
         plt.close()
 
+def fit_all(w_power_guess = 1.3, bounds=[1.2,1.5,3]):
+    """
+    x_guess: w_power, pmin, A, pmin, A, etc
+    """
+    x_guess = [w_power_guess]
+    bounds_for_minimize = [(w_power_guess/bounds[0], w_power_guess*bounds[0])]
+    for transition in transitions:
+        pmin = datainfo[transition]['min_power']
+        x_guess.append(pmin)
+        bounds_for_minimize.append((pmin/bounds[1],pmin*bounds[1]))
+        A = 1/A_guess[transition]
+        x_guess.append(A)
+        bounds_for_minimize.append((A/bounds[2],A*bounds[2]))
+    popt = minimize(fitfunction_all, x_guess,bounds=bounds_for_minimize)
+    return popt
 
 
+def fitfunction_all(x):
+    sum = 0
+    index = 1
+    # num_cores = min(cpu_count()-1, len(transitions))
+    # Parallel(n_jobs=num_cores)(delayed(simulate_trajectory)() for transition in transitions)
+    for transition in transitions:
+        datadic = read(transition)
+        sum += fitfunction_full([x[0], x[index], x[index+1]], datadic)
+        index += 2
+    return sum
+
+# def fitfunction_all_loop(transition, x):
 
 def fit_full(datadic, x_guess, bounds=None):
     """
     Fits pmin, w_power (measure for laser extinction in window etc), A (measure for how much signal corresponds to population inversion)
     """
-    
     bmin = x_guess/bounds
     bmax = x_guess*bounds
-    print(bmin,bmax)
-    popt = least_squares(fitfunction_full, x_guess, args=([datadic]),bounds=(bmin,bmax))
+    bounds = [(bmin[i], bmax[i]) for i in range(len(x_guess))]
+    popt = minimize(fitfunction_full, x_guess, args=(datadic),bounds=bounds)
+    # popt = least_squares(fitfunction_full, x_guess, args=([datadic]))
     return popt.x
 
 def fitfunction_full(x, datadic):
     """
     x = [pmin, w_power, A_experiment]
     """
-    pmin = x[0]
-    w_power = [1]
+    w_power = x[0]
+    pmin = x[1]
     A_experiment = x[2]
     power = (datadic['power_raw'] - pmin)*w_power
     lockin = datadic['lockin_raw'] - datadic['offresonance']
@@ -95,7 +136,8 @@ def fitfunction_full(x, datadic):
     data_for_fit = lockin[index]
     sim_interp = np.interp(power_for_fit, datadic['simulation_power'], datadic['simulation'])
 
-    return A_experiment*data_for_fit - sim_interp
+    print(np.shape(power_for_fit), np.shape(data_for_fit), np.shape(sim_interp))
+    return np.sum((data_for_fit/A_experiment - sim_interp)**2)/len(sim_interp)
 
 
 def fit_amplitude(datadic, A_experiment_guess=1):
