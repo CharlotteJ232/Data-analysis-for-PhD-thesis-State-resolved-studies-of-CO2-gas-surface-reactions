@@ -19,10 +19,10 @@ folderstart = "C:/Users/jansenc3/surfdrive/"
 folderstart = "C:/Users/Werk/Surfdrive/"
 folder = folderstart+"DATA/Power and wavelength data/"
 simulationsfolder = folderstart+'DATA/Laser/Simulations/CO2/220517/'
-simulationsfolder = folderstart+'DATA/Laser/Simulations/CO2/220603/'
-savefolder = folderstart+'DATA/Rotational state distribution/Images/Newsimulations/Withrotations/'
-savefolder = simulationsfolder
-save=False
+simulationsfolder = folderstart+'DATA/Laser/Simulations/CO2/220602/'
+savefolder = folderstart+'DATA/Rotational state distribution/Images/Newsimulations/Withoutrotations/'
+# savefolder = simulationsfolder
+save=True
 fun = 'dbl_exp'
 cmap = 'viridis'
 
@@ -52,10 +52,12 @@ def main():
     for transition in transitions:
         data = datadic[transition]
         datadic[transition] = normalize_shift_PED_signal(data, datainfo[transition]['min_power'], window_loss=0.1)
-    plot_single(datadic,'R2', include_fit=False)
-    plot_all_normalized(datadic) 
+    plot_single(datadic,'R6', include_fit=False, text='a)')
+    plot_all_raw(datadic, text='b)')
+    plot_all_simulations(datadic)
+    plot_all_normalized(datadic, text='a)') 
     # plot_all_separately(datadic)
-    rotational_temperature(datadic)
+    rotational_temperature(datadic, text='b)')
     # plot_all_data_simulations(datadic)
 
 
@@ -82,56 +84,105 @@ def read_all():
     return datadic
 
 
-
-
-def plot_single(datadic, transition, include_fit=True):
-    data = datadic[transition]
-    color = grayscale(transition, typ=cmap)
+def plot_all_raw(datadic, text=''):
     fig, ax = plt.subplots()
-    ax.plot(data['power']*1000, data['lockin'],'.',markersize=2, color=color, label='PED data '+transition)
-    if include_fit:
-        ax.plot(data['power'][data['sort']]*1000, dbl_exp(data['power'][data['sort']],*data['popt']), color='black', label='Fit')
-        ax.plot([-100,100], [data['max'],data['max']], '--', color='black')
-    ax.plot([-100,100], [data['offresonance'],data['offresonance']], '--', color='gray', label='Off resonance signal')
-    ax.set_xlim(0, 35)
+    for transition in transitions:
+        data = datadic[transition]
+        color = select_color(transition, typ=cmap)
+        ax.plot(data['power']*1000, data['lockin'],'.',markersize=2, color=color)
+        ax.plot(-1, data['lockin'][0], '.', markersize=10, color=color, label=transition) #just for legend
+    #  ax.plot([-100,100], [data['offresonance'],data['offresonance']], '--', color='gray', label='Off resonance signal')
+    ax.set_xlim(0, 40)
     ax.set_xlabel('Laser power (mW)')
     ax.set_ylabel('PED signal (V)')
     ax.legend(loc='center right')
     ax.tick_params(top=True, direction='in')  
     ax.tick_params(right=True, labelleft=True, direction='in')
+    ax.text(0.025, 0.9, text, transform=ax.transAxes)
+    if save:
+        plt.savefig(savefolder+'all_raw.png', dpi=500)
+
+def plot_single(datadic, transition, include_fit=True, text=''):
+    data = datadic[transition]
+    color = select_color(transition, typ=cmap)
+    fig, ax = plt.subplots()
+    ax.plot(data['power']*1000, data['lockin'],'.',markersize=2, color=color)
+    ax.plot(-1, data['lockin'][0], '.', markersize=10, color=color, label='PED data '+transition) #just for legend
+    if include_fit:
+        ax.plot(data['power'][data['sort']]*1000, dbl_exp(data['power'][data['sort']],*data['popt']), color='black', label='Fit')
+        ax.plot([-100,100], [data['max'],data['max']], '--', color='black')
+    ax.plot([-100,100], [data['offresonance'],data['offresonance']], '--', color='gray', label='Off resonance signal')
+    ax.set_xlim(0, 40)
+    ax.set_xlabel('Laser power (mW)')
+    ax.set_ylabel('PED signal (V)')
+    ax.legend(loc='center right')
+    ax.tick_params(top=True, direction='in')  
+    ax.tick_params(right=True, labelleft=True, direction='in')
+    ax.text(0.025, 0.9, text, transform=ax.transAxes)
     if save:
         plt.savefig(savefolder+transition+'.png', dpi=500)
 
-def plot_all_normalized(datadic):    
+
+def plot_all_normalized(datadic, text=''):    
     fig, ax = plt.subplots()
     for transition in list(datadic.keys()):
-        color = grayscale(transition, typ=cmap)
+        color = select_color(transition, typ=cmap)
         data = datadic[transition]
-        ax.plot(data['power_shifted']*1000, data['lockin_normalized'],'.',markersize=2, color=color, label=transition)
+        ax.plot((data['power']*1000-data['pmin'])*data['w_power'], data['lockin']-data['offresonance'],'.',markersize=2, color=color)
+        ax.plot(-10, data['lockin'][0], '.', markersize=10, color=color, label=transition) #just for legend
     for transition in list(datadic.keys()):
+        # color = select_color(transition, typ='gray')
         data = datadic[transition]
-        ax.plot(data['power_shifted'][data['sort']]*1000, dbl_exp(data['power'][data['sort']],*data['popt'])/data['offresonance'],linewidth=1, color='black')
-    ax.plot([-100,100], [1,1], '--', color='gray')
-    ymax = 2.5
-    ymin = 0.75
-    ax.axis([-2, 40, ymin, ymax])
+        ax.plot(data['simulation_power'], data['simulation']*data['A'],linewidth=1, color='black')
+
+    ymax = 5
+    ymin = 0
+    ax.axis([-2, 50, ymin, ymax])
     ax.legend(loc='best')
     ax.set_xlabel('Laser power (mW)')
-    ax.set_ylabel('PED signal (normalized)')
+    ax.set_ylabel('PED signal (shifted)')
 
     ax.tick_params(top=True, direction='in')  
     ax.tick_params(right=True, labelleft=True, direction='in')
     ax.tick_params(which='minor', top=True, direction='in')  
     ax.tick_params(which='minor', right=True, direction='in')
-    ax.yaxis.set_major_locator(MultipleLocator((ymax-ymin)/7))
+    # ax.yaxis.set_major_locator(MultipleLocator((ymax-ymin)/7))
 
-    ax.text(0.025, 0.9, 'a)', transform=ax.transAxes)
+    ax.text(0.025, 0.9, text, transform=ax.transAxes)
 
 
     if save:
         plt.savefig(savefolder+'all_data_and_fits.png', dpi=500)
     plt.show()
     plt.close()
+
+def plot_all_simulations(datadic, text=''):
+    fig, ax = plt.subplots()
+    for transition in list(datadic.keys()):
+        color = select_color(transition, typ=cmap)
+        data = datadic[transition]
+        ax.plot(data['simulation_power'], data['simulation'],linewidth=1, color=color, label=transition)
+
+    ymax = 1
+    ymin = 0
+    ax.axis([-2, 50, ymin, ymax])
+    ax.legend(loc='best')
+    ax.set_xlabel('Laser power (mW)')
+    ax.set_ylabel('Excited population')
+
+    ax.tick_params(top=True, direction='in')  
+    ax.tick_params(right=True, labelleft=True, direction='in')
+    ax.tick_params(which='minor', top=True, direction='in')  
+    ax.tick_params(which='minor', right=True, direction='in')
+    # ax.yaxis.set_major_locator(MultipleLocator((ymax-ymin)/7))
+
+    ax.text(0.025, 0.9, text, transform=ax.transAxes)
+
+    if save:
+        plt.savefig(savefolder+'all_simulations.png', dpi=500)
+    plt.show()
+    plt.close()
+
 
 def plot_all_separately(datadic):
     for transition in transitions:
@@ -145,12 +196,12 @@ def plot_all_separately(datadic):
             plt.savefig(savefolder+transition+'_data_simulation.png', dpi=500)
         plt.show()
 
-def plot_all_data_simulations(datadic):
+def plot_all_data_simulations(datadic, text=''):
     fig, (ax1, ax2, ax3) = plt.subplots(3,1,sharex='all',figsize=(5,9))
     fig.subplots_adjust(hspace=0)
     for transition in transitions:
         data = datadic[transition]
-        color = grayscale(transition, typ=cmap)
+        color = select_color(transition, typ=cmap)
         ax1.plot(data['power_normalized']*1000, data['population'], '.', color=color, markersize=1, label=transition)
         ax2.plot(data['power_normalized'][data['sort']]*1000, data['normalized_fit'][data['sort']], color=color, markersize=1, label=transition)
         ax3.plot(data['simulation_power'], data['simulation'], color=color, label=transition)
@@ -175,7 +226,7 @@ def plot_all_data_simulations(datadic):
     ax3.legend(loc='lower right')
 
 
-
+    ax.text(0.025, 0.9, text, transform=ax.transAxes)
 
 
 
@@ -185,14 +236,14 @@ def plot_all_data_simulations(datadic):
     plt.show()
     plt.close()
 
-def rotational_temperature(datadic):
+def rotational_temperature(datadic, text=''):
     J = []
     population = []
     colors = []
     for transition in transitions:
         J.append(int(transition[1:]))
-        population.append((datadic[transition]['max']-datadic[transition]['offresonance'])/datadic[transition]['offresonance'])
-        colors.append(grayscale(transition,typ=cmap))
+        population.append(datadic[transition]['A'])
+        colors.append(select_color(transition,typ=cmap))
     J = np.array(J)
     population = np.array(population)
 
@@ -233,7 +284,7 @@ def rotational_temperature(datadic):
     plt.axis([-0.5,10.5,0,0.25])
 
 
-    ax.text(0.025, 0.9, 'b)', transform=ax.transAxes)
+    ax.text(0.025, 0.9, text, transform=ax.transAxes)
 
     if save:
         plt.savefig(savefolder+'rotational_temperature.png', dpi=500)
@@ -242,7 +293,7 @@ def rotational_temperature(datadic):
 
 
 
-def grayscale(transition, typ='viridis'):
+def select_color(transition, typ='viridis'):
     shift = 4
     max = 16
     val = (int(transition[1:])+shift)/max
@@ -321,3 +372,90 @@ main()
 # ax2.legend()
 # plt.show()
 # plt.close()
+
+
+def plot_all_normalized_old(datadic, text=''):    
+    fig, ax = plt.subplots()
+    for transition in list(datadic.keys()):
+        color = select_color(transition, typ=cmap)
+        data = datadic[transition]
+        ax.plot(data['power_shifted']*1000, data['lockin_normalized'],'.',markersize=2, color=color, label=transition)
+    for transition in list(datadic.keys()):
+        data = datadic[transition]
+        ax.plot(data['power_shifted'][data['sort']]*1000, dbl_exp(data['power'][data['sort']],*data['popt'])/data['offresonance'],linewidth=1, color='black')
+    ax.plot([-100,100], [1,1], '--', color='gray')
+    ymax = 2.5
+    ymin = 0.75
+    ax.axis([-2, 40, ymin, ymax])
+    ax.legend(loc='best')
+    ax.set_xlabel('Laser power (mW)')
+    ax.set_ylabel('PED signal (normalized)')
+
+    ax.tick_params(top=True, direction='in')  
+    ax.tick_params(right=True, labelleft=True, direction='in')
+    ax.tick_params(which='minor', top=True, direction='in')  
+    ax.tick_params(which='minor', right=True, direction='in')
+    ax.yaxis.set_major_locator(MultipleLocator((ymax-ymin)/7))
+
+    ax.text(0.025, 0.9, text, transform=ax.transAxes)
+
+
+    if save:
+        plt.savefig(savefolder+'all_data_and_fits.png', dpi=500)
+    plt.show()
+    plt.close()
+
+def rotational_temperature_old(datadic):
+    J = []
+    population = []
+    colors = []
+    for transition in transitions:
+        J.append(int(transition[1:]))
+        population.append((datadic[transition]['max']-datadic[transition]['offresonance'])/datadic[transition]['offresonance'])
+        colors.append(select_color(transition,typ=cmap))
+    J = np.array(J)
+    population = np.array(population)
+
+    theta_r = 0.561 #for CO2
+    T_guess = 5
+    A_guess = 0.1
+    vibrational_ground_state_fraction = 0.95
+
+    def boltzmann(J, A, T):
+        return A*(2*J+1)*np.exp(-1*(J*(J+1)*theta_r)/(T))
+
+    popt = curve_fit(boltzmann, J,population,p0=[A_guess,T_guess])
+    # print(popt[0])
+
+    many_J = np.arange(0,1000,2)
+    Z = np.sum(boltzmann(many_J, *popt[0]))/vibrational_ground_state_fraction
+
+    fig, ax = plt.subplots()
+
+    # plt.plot(J, population, 'o', label='Measured data')
+    # plt.plot(J, boltzmann(J, A_guess, T_guess), label='Guess, T='+str(T_guess)+'K')
+    smooth_J = np.arange(0,10, 0.1)
+    ax.plot(smooth_J, boltzmann(smooth_J, *popt[0])/Z, '--', label='Fit, T='+str(np.round(popt[0][1],2))+'K', color='gray')
+    for i in range(len(population)):
+        ax.plot(J[i], population[i]/Z, 'o', markersize=8, color=colors[i])
+    ax.plot([-1],[-1],'o',label='Measured population (normalized)',color='gray')
+    plt.xlabel('J')
+    plt.ylabel('Population')
+    plt.legend(loc='lower right')
+
+    ax.tick_params(top=True, direction='in')  
+    ax.tick_params(right=True, labelleft=True, direction='in')
+    ax.yaxis.set_minor_locator(AutoMinorLocator())
+    ax.tick_params(which='minor', top=True, direction='in')  
+    ax.tick_params(which='minor', right=True, direction='in')
+
+    # plt.title('Fitted T = '+str(np.round(popt[0][1],2))+' K')
+    plt.axis([-0.5,10.5,0,0.25])
+
+
+    ax.text(0.025, 0.9, text, transform=ax.transAxes)
+
+    if save:
+        plt.savefig(savefolder+'rotational_temperature.png', dpi=500)
+    plt.show()
+    plt.close()

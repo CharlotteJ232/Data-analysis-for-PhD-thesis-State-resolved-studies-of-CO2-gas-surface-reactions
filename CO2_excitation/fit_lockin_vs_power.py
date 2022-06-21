@@ -19,7 +19,7 @@ A_guess = { 'R0':1.0,
             'R6':0.2211775,
             'R8':0.30620438,
             'R10':0.53134895
-            }
+            } #note: for fitting, the inverse of this is used
 
 
 
@@ -37,41 +37,43 @@ save=False
 def main():
     print('main')
 
-    # amplitudes = []
-    # for transition in transitions:
-    #     datadic = read(transition)
-
-    #     x_guess = np.array([1.2,datainfo[transition]['min_power'],1/A_guess[transition]])
-    #     print(x_guess)
-    #     w_power, pmin, A = fit_full(datadic, x_guess, bounds=np.array([1.1,1.5,3]))
-    #     if save:
-    #         np.savetxt(simulationsfolder+transition+'_x.txt', [w_power, pmin, A])
-    #     print (pmin, w_power, A)
-    #     amplitudes.append(A)
-    #     plot_fit(transition, datadic, w_power, pmin, A, name='')
-    # print(amplitudes)
-
-    popt = fit_all()
-    x = popt.x
-    if save:
-        np.savetxt(simulationsfolder+'x.txt', x)
-    print(popt)
-    # x = [1.09090909, 4.86848057, 0.98337631, 4.32269159, 4.15274705, 3.80092913, 5.25014092, 5.10166111, 4.64286135, 4.88022767, 3.1502073, 4.4786131, 1.94651]
-    index = 1
+#### Fit with separate width ####
+    amplitudes = []
     for transition in transitions:
         datadic = read(transition)
-        w_power = x[0]
-        pmin = x[index]
-        A = x[index+1]
-        index += 2
-        plot_fit(transition, datadic, w_power, pmin, A, name='_all')
+
+        x_guess = np.array([1.2,datainfo[transition]['min_power'],1/A_guess[transition]/3]) #1/A_guess/3 because I changed the fit parameter and I divided the data by the off-resonance signal (close to 3 V)
+        print(x_guess)
+        w_power, pmin, A = fit_full(datadic, x_guess, bounds=np.array([1.1,1.5,3]))
+        if save:
+            np.savetxt(simulationsfolder+transition+'_x.txt', [w_power, pmin, A])
+        print (pmin, w_power, A)
+        amplitudes.append(A)
+        plot_fit(transition, datadic, w_power, pmin, A, name='')
+    print(amplitudes)
+
+#### Fit with shared width ####
+    # popt = fit_all()
+    # x = popt.x
+    # if save:
+    #     np.savetxt(simulationsfolder+'x.txt', x)
+    # print(popt)
+    # # x = [1.09090909, 4.86848057, 0.98337631, 4.32269159, 4.15274705, 3.80092913, 5.25014092, 5.10166111, 4.64286135, 4.88022767, 3.1502073, 4.4786131, 1.94651]
+    # index = 1
+    # for transition in transitions:
+    #     datadic = read(transition)
+    #     w_power = x[0]
+    #     pmin = x[index]
+    #     A = x[index+1]
+    #     index += 2
+    #     plot_fit(transition, datadic, w_power, pmin, A, name='_all')
 
 
 
 
 def plot_fit(transition, datadic, w_power, pmin, A, name=''):
-        plt.plot((datadic['power_raw']-pmin)*w_power, (datadic['lockin_raw']-datadic['offresonance'])/A, '.')
-        plt.plot(datadic['simulation_power'], datadic['simulation'])
+        plt.plot((datadic['power_raw']-pmin)*w_power, (datadic['lockin_raw']-datadic['offresonance'])/datadic['offresonance'], '.')
+        plt.plot(datadic['simulation_power'], datadic['simulation']*A)
         plt.title(transition+', pmin='+str(np.round(pmin,3))+', w_power='+ str(np.round(w_power,3))+', A='+str(np.round(A,3)))
         plt.xlabel('Power (mW)')
         plt.ylabel('Excited population')
@@ -129,14 +131,14 @@ def fitfunction_full(x, datadic):
     pmin = x[1]
     A_experiment = x[2]
     power = (datadic['power_raw'] - pmin)*w_power
-    lockin = datadic['lockin_raw'] - datadic['offresonance']
+    lockin = (datadic['lockin_raw'] - datadic['offresonance'])/datadic['offresonance'] #division by offresonance to correct for changes in sensitivity
 
     index = (power > np.min(datadic['simulation_power'])) * (power < np.max(datadic['simulation_power']))
     power_for_fit = power[index]
     data_for_fit = lockin[index]
     sim_interp = np.interp(power_for_fit, datadic['simulation_power'], datadic['simulation'])
 
-    print(np.shape(power_for_fit), np.shape(data_for_fit), np.shape(sim_interp))
+    # print(np.shape(power_for_fit), np.shape(data_for_fit), np.shape(sim_interp))
     return np.sum((data_for_fit/A_experiment - sim_interp)**2)/len(sim_interp)
 
 
