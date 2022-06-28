@@ -21,7 +21,7 @@ import os
 save_all_plots = True
 
 directory = 'C:/Users/jansenc3/surfdrive/'
-# directory = 'C:/Users/Werk/surfdrive/'
+directory = 'C:/Users/Werk/surfdrive/'
 
 experiment_list = [] #list contains tuples (data_folder, nozzle_temp, nozzle_pressure, gas_mass, avg_mass, start_dataset, nr_of_datasets)
 
@@ -44,13 +44,30 @@ experiment_list = [] #list contains tuples (data_folder, nozzle_temp, nozzle_pre
 # experiment_list.append((directory+'DATA/2021/07 Jul/210727/TOF/', 573, 5340, 0.044, (0.004*25+0.044*0.5)/25.5, 7, 7)) #25.5 mL/min
 # experiment_list.append((directory+'DATA/2021/09 Sep/210930/TOF/', 300, 3700, 0.004, (0.004*25+0.044*1)/26, 0, 7)) 
 # experiment_list.append((directory+'DATA/2021/09 Sep/210930/TOF/', 300, 3700, 0.044, (0.004*25+0.044*1)/26, 7, 7)) 
-experiment_list.append((directory+'DATA/2022/03 Mar/220321/TOF/', 300, 3585, 0.004, (0.004*25+0.044*1)/26, 0, 7)) 
-experiment_list.append((directory+'DATA/2022/03 Mar/220321/TOF/', 300, 3585, 0.044, (0.004*25+0.044*1)/26, 7, 7)) 
+# experiment_list.append((directory+'DATA/2022/03 Mar/220321/TOF/', 300, 3585, 0.004, (0.004*25+0.044*1)/26, 0, 7)) 
+# experiment_list.append((directory+'DATA/2022/03 Mar/220321/TOF/', 300, 3585, 0.044, (0.004*25+0.044*1)/26, 7, 7)) 
+experiment_list.append((directory+'DATA/2022/04 Apr/220406/TOF25sccmHe1sccmO2/', 300, -1, 0.004, (0.004*25+0.032*1)/26, 0, 7)) 
+# experiment_list.append((directory+'DATA/2022/04 Apr/220406/TOFb50sccmHe1sccmO2/', 300, -1, 0.004, (0.004*50+0.032*1)/51, 0, 7)) 
+# experiment_list.append((directory+'DATA/2022/04 Apr/220406/TOFc40sccmHe1sccmO2/', 300, -1, 0.004, (0.004*40+0.032*1)/41, 0, 7)) 
+# experiment_list.append((directory+'DATA/2022/04 Apr/220421/TOF_10sccmHe10sccmO2/', 300, -1, 0.004, (0.004*10+0.032*10)/20, 0, 7)) 
+# experiment_list.append((directory+'DATA/2022/05 May/220520/TOF_10sccmHe7sccmO2/', 300, -1, 0.004, (0.004*10+0.032*7)/17, 0, 7)) 
+# experiment_list.append((directory+'DATA/2022/05 May/220523/TOF12sccmHe6sccmO2/', 300, -1, 0.004, (0.004*12+0.032*6)/18, 0, 7)) 
+# experiment_list.append((directory+'DATA/2022/05 May/220523/TOF15sccmHe5sccmO2/', 300, -1, 0.004, (0.004*15+0.032*5)/20, 0, 7)) 
+# experiment_list.append((directory+'DATA/2022/05 May/220523/TOF20sccmHe2sccmO2/', 300, -1, 0.004, (0.004*20+0.032*2)/22, 0, 7)) 
+# experiment_list.append((directory+'DATA/2022/04 Apr/220406/TOF25sccmHe1sccmO2/', 300, -1, 0.032, (0.004*25+0.032*1)/26, 7, 7)) 
+# experiment_list.append((directory+'DATA/2022/04 Apr/220406/TOFb50sccmHe1sccmO2/', 300, -1, 0.032, (0.004*50+0.032*1)/51, 7, 7)) 
+# experiment_list.append((directory+'DATA/2022/04 Apr/220406/TOFc40sccmHe1sccmO2/', 300, -1, 0.032, (0.004*40+0.032*1)/41, 7, 7)) 
+# experiment_list.append((directory+'DATA/2022/04 Apr/220421/TOF_10sccmHe10sccmO2/', 300, -1, 0.032, (0.004*10+0.032*10)/20, 7, 7)) 
+# experiment_list.append((directory+'DATA/2022/05 May/220520/TOF_10sccmHe7sccmO2/', 300, -1, 0.032, (0.004*10+0.032*7)/17, 7, 7)) 
+# experiment_list.append((directory+'DATA/2022/05 May/220523/TOF12sccmHe6sccmO2/', 300, -1, 0.032, (0.004*12+0.032*6)/18, 7, 7)) 
+# experiment_list.append((directory+'DATA/2022/05 May/220523/TOF15sccmHe5sccmO2/', 300, -1, 0.032, (0.004*15+0.032*5)/20, 7, 7)) 
+# experiment_list.append((directory+'DATA/2022/05 May/220523/TOF20sccmHe2sccmO2/', 300, -1, 0.032, (0.004*20+0.032*2)/22, 7, 7)) 
+
 
 data_positions = [0, 46, 35, 25, 15, 5, 0] #positions on moving stage (mm), corresponding to number of dataset above
 
 L_setup = 567 #mm for the UTI
-L_setup = 587 #mm for the 125 (guess)
+L_setup = 760.8 #mm for the 125 (guess)
 
 measured_chopper_freq = False
 chopper_freq = 253 #Hz
@@ -58,7 +75,7 @@ data_vext = np.ones(len(data_positions)) #not used now, but I am too lazy to rem
 savefolder = ''
 peak_fraction_gauss_fit = 1/3 #top fraction of the peak used for the gaussian fit to guess ts
 
-increase_fit_bounds = 1.5 #increases the fitparameter bound range by this factor. If you use this, check if the path length is not fitted to an incorrect value
+increase_fit_bounds = 1 #increases the fitparameter bound range by this factor. If you use this, check if the path length is not fitted to an incorrect value
 
 def main():
 
@@ -298,7 +315,7 @@ class Experiment:
         upper = self.params*factors 
         upper[-2] += 0.1 #because ts is a very small number and can sometimes be negative too. A shift works better than a factor
         lower = self.params/factors
-        lower[-2] -= 0.1         
+        # lower[-2] = 1E-10 #just a very small number because it should not be negative    
       
         bounds = (lower, upper)
         

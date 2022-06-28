@@ -8,9 +8,10 @@ Created on Mon May 20 16:30:21 2019
 import numpy as np
 from matplotlib import pyplot as plt
 import os
+import pickle
 
 folderstart = 'P:/Surfdrive/DATA/'
-folderstart = 'D:/Surfdrive/DATA/'
+folderstart = 'C:/Users/Werk/surfdrive/DATA/'
 
 positions_odd = np.concatenate((np.arange(19.8, 22.9, 0.5),np.arange(16.8, 19.4, 0.5)))
 positions_even = np.concatenate((np.arange(19.8, 16.7, -0.5),np.arange(22.8, 19.7, -0.5)))
@@ -56,8 +57,8 @@ datasets = np.arange(2,5,1)
 # folder = 'P:/DATA/2020/03 Mar/200311/KW/'
 # datasets = np.arange(2,12.1,2)
 
-# folder = folderstart+'2020/03 Mar/200311/KW/'
-# datasets = np.arange(1,12.1,1)
+folder = folderstart+'2020/03 Mar/200311/KW/'
+datasets = np.arange(1,12.1,1)
 
 # folder = folderstart+'2020/05 May/200512/KW/'
 # datasets = np.arange(2,12.1,1)
@@ -74,20 +75,20 @@ datasets = np.arange(2,5,1)
 # folder = folderstart+'2020/06 Jun/200602/KW/'
 # datasets = np.arange(2,13.1,1)
 
-folder = folderstart+'2020/07 Jul/200727/KW/'
-datasets = np.arange(1,10.1,1)
+# folder = folderstart+'2020/07 Jul/200727/KW/'
+# datasets = np.arange(1,10.1,1)
 
-folder = folderstart+'2020/08 Aug/200814/KW/'
-datasets = np.arange(1,10.1,1)
+# folder = folderstart+'2020/08 Aug/200814/KW/'
+# datasets = np.arange(1,10.1,1)
 
-folder = folderstart+'2020/08 Aug/200817/KW/'
-datasets = np.arange(1,9.1,1)
+# folder = folderstart+'2020/08 Aug/200817/KW/'
+# datasets = np.arange(1,9.1,1)
 
-folder = folderstart+'2020/08 Aug/200825/KW/'
-datasets = np.arange(1,7.1,1)
+# folder = folderstart+'2020/08 Aug/200825/KW/'
+# datasets = np.arange(1,7.1,1)
 
-folder = folderstart+'2020/09 Sep/200904/KW/'
-datasets = np.arange(1,8.1,1)
+# folder = folderstart+'2020/09 Sep/200904/KW/'
+# datasets = np.arange(1,8.1,1)
 
 #positions_odd = [189, 199, 209]
 #positions_even = positions_odd
@@ -98,7 +99,7 @@ datasets = np.arange(1,8.1,1)
 
 filenamestart = 'KW' #'KW' for standard 'KW01' filenames
 ext = '.txt'
-savefolder = folder+'Images/'
+savefolder = folder+'Processed_data/'
 
 t_flag1_open = 9 #s, total time flag 1 is open
 t_open_flag2 = 3 #s, time after opening of flag 1
@@ -106,7 +107,7 @@ t_open_flag2 = 3 #s, time after opening of flag 1
 t_background = 4 #amount of seconds left and right of the measurement that are kept in the datasets. this can be chosen
 
 
-save_individual = True
+save_individual = False
 
 
 def main():
@@ -115,7 +116,7 @@ def main():
     
     measurements = {}
     for pos in positions:
-        measurements[pos] = measurement(pos, t_background, t_flag1_open, t_open_flag2)
+        measurements[pos] = Measurement(pos, t_background, t_flag1_open, t_open_flag2)
     
     read_data_files(measurements, numbers='odd') #only reads the first column of data now!
     read_data_files(measurements, numbers='even')
@@ -133,7 +134,9 @@ def main():
 
     stickinglist = np.array(stickinglist)
     
-
+    with open(savefolder+'data.pickle', 'wb') as f:
+        # Pickle the 'data' dictionary using the highest protocol available.
+        pickle.dump(measurements, f, pickle.HIGHEST_PROTOCOL)
 
     
     plt.scatter(positions, stickinglist)
@@ -151,7 +154,7 @@ def main():
     
 ########## Classes  ######################
     
-class measurement:
+class Measurement:
     def __init__(self, position, t_background, t_flag1_open, t_open_flag2):
         self.position = position
         self.t_background = t_background

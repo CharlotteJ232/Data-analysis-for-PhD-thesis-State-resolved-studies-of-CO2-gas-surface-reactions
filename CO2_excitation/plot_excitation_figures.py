@@ -47,6 +47,7 @@ def main():
         if not os.path.exists(savefolder):
             os.makedirs(savefolder)
 
+    #NOTE: remove some offresonance factors (see comments) when new fit is applied
 
     datadic = read_all()
     for transition in transitions:
@@ -128,25 +129,25 @@ def plot_all_normalized(datadic, text=''):
     for transition in list(datadic.keys()):
         color = select_color(transition, typ=cmap)
         data = datadic[transition]
-        ax.plot((data['power']*1000-data['pmin'])*data['w_power'], data['lockin']-data['offresonance'],'.',markersize=2, color=color)
+        ax.plot((data['power']*1000-data['pmin'])*data['w_power'], (data['lockin']-data['offresonance'])/data['offresonance'],'.',markersize=2, color=color)
         ax.plot(-10, data['lockin'][0], '.', markersize=10, color=color, label=transition) #just for legend
     for transition in list(datadic.keys()):
         # color = select_color(transition, typ='gray')
         data = datadic[transition]
-        ax.plot(data['simulation_power'], data['simulation']*data['A'],linewidth=1, color='black')
+        ax.plot(data['simulation_power'], data['simulation']*data['A']/data['offresonance'],linewidth=1, color='black') #remove division by offresonance if fit is done again
 
-    ymax = 5
+    ymax = 1.5
     ymin = 0
     ax.axis([-2, 50, ymin, ymax])
     ax.legend(loc='best')
     ax.set_xlabel('Laser power (mW)')
-    ax.set_ylabel('PED signal (shifted)')
+    ax.set_ylabel('PED signal increase (normalized)')
 
     ax.tick_params(top=True, direction='in')  
     ax.tick_params(right=True, labelleft=True, direction='in')
     ax.tick_params(which='minor', top=True, direction='in')  
     ax.tick_params(which='minor', right=True, direction='in')
-    # ax.yaxis.set_major_locator(MultipleLocator((ymax-ymin)/7))
+    ax.yaxis.set_major_locator(MultipleLocator((ymax-ymin)/3))
 
     ax.text(0.025, 0.9, text, transform=ax.transAxes)
 
@@ -242,7 +243,7 @@ def rotational_temperature(datadic, text=''):
     colors = []
     for transition in transitions:
         J.append(int(transition[1:]))
-        population.append(datadic[transition]['A'])
+        population.append(datadic[transition]['A']/datadic[transition]['offresonance']) #remove offresonance when new fit is done
         colors.append(select_color(transition,typ=cmap))
     J = np.array(J)
     population = np.array(population)
