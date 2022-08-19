@@ -18,7 +18,7 @@ import os
 
 ########### Settings ########################################################
 
-save_all_plots = True
+save_all_plots = False
 
 directory = 'C:/Users/jansenc3/surfdrive/'
 directory = 'C:/Users/Werk/surfdrive/'
@@ -549,7 +549,7 @@ def fitfunction_convolution(t, A, B, L, t0, ts, alpha, chopper_freq,corr_dens=Fa
         if corr_dens:
             #note: i think the last /t should instead be / (t-ts-t_shift[i]), i don't know why I chose for just /t.
             #also, this version cannot be used to fit, only to generate the y values for certain fit parameters
-            y += (amp[i] * A * ((L/(t-ts-t_shift[i]))**4 * np.exp(-((L/(t-ts-t_shift[i])-L/t0)/alpha)**2)) / t) #
+            y += (amp[i] * A * ((L/(t-ts-t_shift[i]))**4 * np.exp(-((L/(t-ts-t_shift[i])-L/t0)/alpha)**2)) / (t-ts-t_shift[i])) #
         else:
             y += (amp[i] * A * ((L/(t-ts-t_shift[i]))**4 * np.exp(-((L/(t-ts-t_shift[i])-L/t0)/alpha)**2))) #
     y /= np.sum(amp)  #so 
