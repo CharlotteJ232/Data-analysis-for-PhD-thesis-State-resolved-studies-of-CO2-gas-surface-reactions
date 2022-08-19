@@ -40,13 +40,13 @@ experiment_list = [] #list contains tuples (data_folder, nozzle_temp, nozzle_pre
 # experiment_list.append((directory+'DATA/2021/07 Jul/210726/TOF/', 573, 5900, 0.004, 0.004, 14, 7)) #30 mL/min
 # experiment_list.append((directory+'DATA/2021/07 Jul/210726/TOF/', 573, 4333, 0.004, 0.004, 21, 7)) #20 mL/min
 # experiment_list.append((directory+'DATA/2021/07 Jul/210726/TOF/', 673, 4805, 0.004, 0.004, 28, 7)) #20 mL/min
-# experiment_list.append((directory+'DATA/2021/07 Jul/210727/TOF/', 573, 5340, 0.004, (0.004*25+0.044*0.5)/25.5, 0, 7)) #25.5 mL/min
-# experiment_list.append((directory+'DATA/2021/07 Jul/210727/TOF/', 573, 5340, 0.044, (0.004*25+0.044*0.5)/25.5, 7, 7)) #25.5 mL/min
+experiment_list.append((directory+'DATA/2021/07 Jul/210727/TOF/', 573, 5340, 0.004, (0.004*25+0.044*0.5)/25.5, 0, 7)) #25.5 mL/min
+experiment_list.append((directory+'DATA/2021/07 Jul/210727/TOF/', 573, 5340, 0.044, (0.004*25+0.044*0.5)/25.5, 7, 7)) #25.5 mL/min
 # experiment_list.append((directory+'DATA/2021/09 Sep/210930/TOF/', 300, 3700, 0.004, (0.004*25+0.044*1)/26, 0, 7)) 
 # experiment_list.append((directory+'DATA/2021/09 Sep/210930/TOF/', 300, 3700, 0.044, (0.004*25+0.044*1)/26, 7, 7)) 
 # experiment_list.append((directory+'DATA/2022/03 Mar/220321/TOF/', 300, 3585, 0.004, (0.004*25+0.044*1)/26, 0, 7)) 
 # experiment_list.append((directory+'DATA/2022/03 Mar/220321/TOF/', 300, 3585, 0.044, (0.004*25+0.044*1)/26, 7, 7)) 
-experiment_list.append((directory+'DATA/2022/04 Apr/220406/TOF25sccmHe1sccmO2/', 300, -1, 0.004, (0.004*25+0.032*1)/26, 0, 7)) 
+# experiment_list.append((directory+'DATA/2022/04 Apr/220406/TOF25sccmHe1sccmO2/', 300, -1, 0.004, (0.004*25+0.032*1)/26, 0, 7)) 
 # experiment_list.append((directory+'DATA/2022/04 Apr/220406/TOFb50sccmHe1sccmO2/', 300, -1, 0.004, (0.004*50+0.032*1)/51, 0, 7)) 
 # experiment_list.append((directory+'DATA/2022/04 Apr/220406/TOFc40sccmHe1sccmO2/', 300, -1, 0.004, (0.004*40+0.032*1)/41, 0, 7)) 
 # experiment_list.append((directory+'DATA/2022/04 Apr/220421/TOF_10sccmHe10sccmO2/', 300, -1, 0.004, (0.004*10+0.032*10)/20, 0, 7)) 
@@ -67,7 +67,7 @@ experiment_list.append((directory+'DATA/2022/04 Apr/220406/TOF25sccmHe1sccmO2/',
 data_positions = [0, 46, 35, 25, 15, 5, 0] #positions on moving stage (mm), corresponding to number of dataset above
 
 L_setup = 567 #mm for the UTI
-L_setup = 760.8 #mm for the 125 (guess)
+# L_setup = 760.8 #mm for the 125 (guess)
 
 measured_chopper_freq = False
 chopper_freq = 253 #Hz
@@ -154,9 +154,11 @@ class Experiment:
         self.t0_guess = (2*(L_tmax/self.alpha_guess)**2*(tmax_guess-self.ts_guess) #not sure of the physical meaning, derived this from the equation.
                        /(2*(L_tmax/self.alpha_guess)**2-4*(tmax_guess-self.ts_guess)**2))
         self.v0_guess = L_tmax / self.t0_guess #stream velocity, whatever that means. this is used instead of t0, because it is independent of path length and can thus be fitted simultaneously for all datasets
-        self.A_guess = 1E-10 #amplitude, random factor
-        self.B_guess = np.min(list(self.datadict.values())[0].counts)*1.5 #background level
-        
+
+        window_end = self.index_guess + self.index_window #for calculating the end of the analysis window for B_guess
+        self.B_guess = np.average(list(self.datadict.values())[0].counts[window_end:window_end+10]) #background level, averaged over 10 data points after the analysis window
+        self.A_guess = 1E-13 #*(np.max(list(self.datadict.values())[0].counts[self.index_window])-self.B_guess) #amplitude, random factor 
+
         self.params = [self.A_guess for i in range(len(self.datadict))] 
         self.params += [self.B_guess for i in range(len(self.datadict))]
         self.params += [self.L_guess, self.v0_guess, self.ts_guess, self.alpha_guess]
@@ -219,9 +221,9 @@ class Experiment:
             # thresh = (1/2*np.min(y)+1/2*np.max(y))# select only top half of the peak
             thresh = np.min(y)+(1-peak_fraction_gauss_fit)*(np.max(y)-np.min(y))
 
-            index = y > thresh
-            x = x[index]
-            y = y[index]
+            index = np.argwhere(y > thresh)
+            x = x[np.min(index):np.max(index)]
+            y = y[np.min(index):np.max(index)]
             
             fwhm = x[-1]-x[0]
             mean = x[0] + fwhm / 2
@@ -313,9 +315,10 @@ class Experiment:
         factors = np.array(factors) * increase_fit_bounds  #multiplied by easily accessible variable, so we can increase fit bounds if necessary
         
         upper = self.params*factors 
-        upper[-2] += 0.1 #because ts is a very small number and can sometimes be negative too. A shift works better than a factor
+
+        upper[-2] += 0.1 #because ts is a very small number a shift works better than a factor
         lower = self.params/factors
-        # lower[-2] = 1E-10 #just a very small number because it should not be negative    
+        # lower[-2] = 1E-10 #just a very small number because it should not be negative or zero 
       
         bounds = (lower, upper)
         
@@ -348,17 +351,20 @@ class Experiment:
         vmax = 2*self.v_guess
         v = np.arange(1,vmax,1)      
         yv = v**3*np.exp(-((v-v0)/alpha)**2)
-        plt.plot(v,yv/np.sum(yv))
-        plt.title('Velocity distribution, v_avg = '+str(np.round(np.sum(v*yv)/np.sum(yv)))+' m/s')
-        plt.ylabel('Probability density')
-        plt.xlabel('v (m/s)')
-        plt.axis([0,vmax,0,None])
 
         upper = np.argwhere(yv > np.max(yv)/2)
         upper = v[upper]
         width = upper[-1]-upper[0]
         #calculate delta v / v
         deltv = width / v[np.argmax(yv)]
+
+        plt.plot(v,yv/np.sum(yv))
+        plt.title('Velocity distribution, v_avg = '+str(np.round(np.sum(v*yv)/np.sum(yv)))+' m/s, $\Delta$v/v = '+str(np.round(deltv[0],2)))
+        plt.ylabel('Probability density')
+        plt.xlabel('v (m/s)')
+        plt.axis([0,vmax,0,None])
+
+
         
         if save:
             if not os.path.exists(savefolder):
@@ -372,7 +378,7 @@ class Experiment:
         plt.close()
         
         E = 0.5 * self.gas_mass * v**2 / 1000 #kJ/mol
-        yE = 1/np.sqrt(E) * yv
+        yE = 1/np.sqrt(E) * yv #dv = 1/sqrt(E) * dE
         
         #Calculate FWHM
         upper = np.argwhere(yE > np.max(yE)/2)
@@ -384,7 +390,7 @@ class Experiment:
         print(deltE)
         
         plt.plot(E, yE/np.sum(yE))
-        plt.title('Energy distribution, E_avg = '+str(np.round(np.sum(E*yE)/np.sum(yE),3))+' kJ/mol, Q = '+str(np.round(q[0],2)))
+        plt.title('Energy distribution, E_avg = '+str(np.round(np.sum(E*yE)/np.sum(yE),3))+' kJ/mol, $\Delta$E/E = '+str(np.round(deltE[0],2)))
         plt.ylabel('Probability density')
         plt.xlabel('E (kJ/mol)')
         plt.axis([0,np.max(E),0,None])
@@ -422,12 +428,10 @@ class Dataset:
         fit = fitfunction_convolution(self.time[experiment.index_guess-experiment.index_window:experiment.index_guess+experiment.index_window],
               *experiment.fitparams[[int(nr), int(nr)+len(experiment.datadict), -4,-3,-2,-1]], self.chopper_freq, pos = self.position,use_v0=True)
         
-        plt.plot(self.time,
-                 self.counts, label='Data')
-        plt.plot(self.time[experiment.index_guess-experiment.index_window:experiment.index_guess+experiment.index_window],
-                 guess, c='g', label='Guess')
-        plt.plot(self.time[experiment.index_guess-experiment.index_window:experiment.index_guess+experiment.index_window],
-                 fit, c='r',label='Fit')
+        plt.plot(self.time, self.counts, label='Data')
+        t_fit = self.time[experiment.index_guess-experiment.index_window:experiment.index_guess+experiment.index_window]
+        plt.plot(t_fit, guess, c='g', label='Guess')
+        plt.plot(t_fit, fit, c='r',label='Fit')
         plt.title('pos = '+str(self.position)+' mm, max_fit = '+str(self.time[np.argmax(fit)]))
         plt.xlabel('Time (ms)')
         plt.ylabel('Counts')
@@ -442,7 +446,8 @@ class Dataset:
         if save:
             if not os.path.exists(savefolder):
                 os.makedirs(savefolder)
-            plt.savefig(savefolder+'fit_TOF'+str(self.data_nr)+add+'.png', dpi=1000)        
+            plt.savefig(savefolder+'fit_TOF'+str(self.data_nr)+add+'.png', dpi=1000)   
+            np.savetxt(savefolder+'fit_TOF'+str(self.data_nr)+add+'.txt', np.column_stack((t_fit, fit, guess)), header='t, fit, guess')     
         
         plt.show()
         plt.close()

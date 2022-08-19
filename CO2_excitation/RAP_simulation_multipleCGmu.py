@@ -133,7 +133,7 @@ def simulate_trajectory():
 
 
 transitions = ['R0', 'R2', 'R4', 'R6', 'R8', 'R10']
-# transitions = ['R2']
+transitions = ['R2']
 
 
 wl = {  'Test': 4.255469316e-06,
@@ -155,18 +155,19 @@ A21_dic = { 'Test': 140.70,
 
 folderstart = 'C:/Users/jansenc3/Surfdrive/DATA/'
 folderstart = 'C:/Users/Werk/surfdrive/DATA/'
-folder = folderstart+'Laser/Simulations/CO2/220603/'
+folder = folderstart+'Laser/Simulations/CO2/220628/'
 
 filenameaddition = ''
 save=True
+save_figures = True
 
 
 ## Expt input variables
-fx_list=[0.2]       # focus length of lens in xz plane (m)
-z0_list=[0.28]  # position of molecular beam from focussed waist (m)
-lens = True # false for calculations without lens
+fx_list=[0]       # focus length of lens in xz plane (m)
+z0_list=[0]  # position of molecular beam from focussed waist (m)
+lens = False # false for calculations without lens
 
-vel=587       # velocity of molecular beam (m/s) (587 for pure, 2128 for ??)
+vel=587      # velocity of molecular beam (m/s) (587 for pure, 2128 for ??)
 fwhmv_list=[0.17]     # full width half maximum of velocity distribution (as fraction of v)
 
 noztolaser=350e-03 # distance between nozzle and laser (m)
@@ -248,16 +249,24 @@ for transition in transitions:
                         power.append(1000*P)                    # making power an array to plot later
                     # end                                    # end of power loop
 
+                    filename=transition+'_fx_'+str(fx)+'_z0_'+str(z0)+'_lens_'+str(lens)+'_vel_'+str(vel)+'_fwhmv_'+str(fwhmv)+'_lam_'+str(lam)+'_ang_'+str(ang)+'_rx_'+str(rx)+'_ry_'+str(ry)+'_nmax_'+str(nmax)
+
+
                     plt.plot(power,pop)                 # plots fluence curve
+                    plt.axis([0, pmax*1000, 0, 1])
+                    plt.xlabel('Laser power (mW)')
+                    plt.ylabel('Excited population')
+                    if save_figures:
+                        plt.savefig(savefolder+filename+'.png')
+
                     plt.show()
                     plt.close()
 
-                    filename=transition+'_fx_'+str(fx)+'_z0_'+str(z0)+'_lens_'+str(lens)+'_vel_'+str(vel)+'_fwhmv_'+str(fwhmv)+'_lam_'+str(lam)+'_ang_'+str(ang)+'_rx_'+str(rx)+'_ry_'+str(ry)+'_nmax_'+str(nmax)+'.txt'
                     if save:
                         pop = np.array(pop)
                         power = np.array(power)
                         savedata = np.column_stack((power,pop))
-                        np.savetxt(savefolder+filename,savedata)
+                        np.savetxt(savefolder+filename+'.txt',savedata)
                         # f=open(savefolder+filename,'a')
                         # np.savetxt(f,savedata)
                         # f.close()

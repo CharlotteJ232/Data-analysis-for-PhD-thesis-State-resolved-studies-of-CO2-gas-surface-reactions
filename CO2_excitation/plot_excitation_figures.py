@@ -53,13 +53,18 @@ def main():
     for transition in transitions:
         data = datadic[transition]
         datadic[transition] = normalize_shift_PED_signal(data, datainfo[transition]['min_power'], window_loss=0.1)
-    plot_single(datadic,'R6', include_fit=False, text='a)')
+    print('plot_single')
+    plot_single(datadic,'R0', include_fit=False, text='a)')
+    print('plot_all_raw')
     plot_all_raw(datadic, text='b)')
+    print('plot_all_simulations')
     plot_all_simulations(datadic)
-    plot_all_normalized(datadic, text='a)') 
-    # plot_all_separately(datadic)
+    print ('plot_all_normalized, plots PED and simulations together')
+    plot_all_normalized(datadic, text='a)', scale_fits=False) 
+    # # # plot_all_separately(datadic)
+    print('rotational_temperature')
     rotational_temperature(datadic, text='b)')
-    # plot_all_data_simulations(datadic)
+    # # # plot_all_data_simulations(datadic)
 
 
 
@@ -124,36 +129,48 @@ def plot_single(datadic, transition, include_fit=True, text=''):
         plt.savefig(savefolder+transition+'.png', dpi=500)
 
 
-def plot_all_normalized(datadic, text=''):    
+def plot_all_normalized(datadic, text='', scale_fits=True):    
     fig, ax = plt.subplots()
     for transition in list(datadic.keys()):
         color = select_color(transition, typ=cmap)
         data = datadic[transition]
-        ax.plot((data['power']*1000-data['pmin'])*data['w_power'], (data['lockin']-data['offresonance'])/data['offresonance'],'.',markersize=2, color=color)
+
         ax.plot(-10, data['lockin'][0], '.', markersize=10, color=color, label=transition) #just for legend
-    for transition in list(datadic.keys()):
         # color = select_color(transition, typ='gray')
         data = datadic[transition]
-        ax.plot(data['simulation_power'], data['simulation']*data['A']/data['offresonance'],linewidth=1, color='black') #remove division by offresonance if fit is done again
+        if scale_fits:
+            ax.plot((data['power']*1000-data['pmin'])*data['w_power'], (data['lockin']-data['offresonance'])/data['offresonance'],'.',markersize=2, color=color)
+            ax.plot(data['simulation_power'], data['simulation']*data['A']/data['offresonance'],linewidth=1, color='black') #remove division by offresonance if fit is done again
+            ymax = 1.5
+            ax.set_ylabel('PED signal increase (normalized)')
+        else:
+            ax.plot((data['power']*1000-data['pmin'])*data['w_power'], (data['lockin']-data['offresonance'])/data['A'],'.',markersize=2, color=color)
+            ax.plot(data['simulation_power'], data['simulation'],linewidth=1, color='black') #remove division by offresonance if fit is done again
+            ymax = 1
+            ax.set_ylabel('Excited population')
 
-    ymax = 1.5
+
     ymin = 0
     ax.axis([-2, 50, ymin, ymax])
     ax.legend(loc='best')
     ax.set_xlabel('Laser power (mW)')
-    ax.set_ylabel('PED signal increase (normalized)')
+
 
     ax.tick_params(top=True, direction='in')  
     ax.tick_params(right=True, labelleft=True, direction='in')
     ax.tick_params(which='minor', top=True, direction='in')  
     ax.tick_params(which='minor', right=True, direction='in')
-    ax.yaxis.set_major_locator(MultipleLocator((ymax-ymin)/3))
+    # ax.yaxis.set_major_locator(MultipleLocator((ymax-ymin)/3))
 
     ax.text(0.025, 0.9, text, transform=ax.transAxes)
 
 
     if save:
-        plt.savefig(savefolder+'all_data_and_fits.png', dpi=500)
+        if scale_fits:
+            filename = 'all_data_and_fits.png'
+        else:
+            filename = 'all_data_and_fits_data_scaled.png'
+        plt.savefig(savefolder+filename, dpi=500)
     plt.show()
     plt.close()
 
@@ -289,6 +306,30 @@ def rotational_temperature(datadic, text=''):
 
     if save:
         plt.savefig(savefolder+'rotational_temperature.png', dpi=500)
+    plt.show()
+    plt.close()
+
+    fig, ax = plt.subplots()
+
+    # plt.plot(J, population, 'o', label='Measured data')
+    # plt.plot(J, boltzmann(J, A_guess, T_guess), label='Guess, T='+str(T_guess)+'K')
+    smooth_J = np.arange(0,50, 0.1)
+    Z = np.sum(boltzmann(many_J, A_guess, 300))/vibrational_ground_state_fraction
+    ax.plot(smooth_J, boltzmann(smooth_J, A_guess, 300)/Z, '--', label='Fit, T='+str(np.round(popt[0][1],2))+'K', color='gray')
+    ax.plot([-1],[-1],'o',label='Measured population (normalized)',color='gray')
+    plt.xlabel('J')
+    plt.ylabel('Population')
+    # plt.legend(loc='lower right')
+
+    ax.tick_params(top=True, direction='in')  
+    ax.tick_params(right=True, labelleft=True, direction='in')
+    ax.yaxis.set_minor_locator(AutoMinorLocator())
+    ax.tick_params(which='minor', top=True, direction='in')  
+    ax.tick_params(which='minor', right=True, direction='in')
+    plt.axis([0, 50, 0, 0.1])
+
+    if save:
+        plt.savefig(savefolder+'rotational_temperature_300K.png', dpi=500)
     plt.show()
     plt.close()
 
