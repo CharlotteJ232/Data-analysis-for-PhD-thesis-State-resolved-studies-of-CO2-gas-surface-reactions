@@ -17,7 +17,7 @@ HOW TO USE:
 4. Run script
 """
 
-folder = 'P:/Surfdrive/Python/CO_contamination/190118/'
+folder = 'C:/Users/jansenc3/surfdrive/DATA/2022/08 Aug/220826/KW/'
 file_extension = '.mdc'
 
 """
