@@ -17,7 +17,7 @@ HOW TO USE:
 4. Run script
 """
 
-folder = 'C:/Users/jansenc3/surfdrive/DATA/2022/08 Aug/220826/KW/'
+folder = 'C:/Users/jansenc3/surfdrive/DATA/2022/07 Jul/220728/KW/'
 file_extension = '.mdc'
 
 """
@@ -39,7 +39,7 @@ def main():
 
 def convert_file(filename):
     #Variables
-    nCycles =       {'pos': 100, 'val':-1, 'len':2, 'typ':'h'} #number of measurement cycles
+    nCycles =       {'pos': 100, 'val':-1, 'len':4, 'typ':'i'} #number of measurement cycles
     nDatablocks =   {'pos': 112, 'val':-1, 'len':2, 'typ':'h'} #number of datablocks (store different types of data)
     nChannels1 =    {'pos': 203, 'val':0, 'len':2, 'typ':'h','unit':''} #in TPD file: stores external (temperature) channel. In KW file: stores mass channels
     nChannels2 =    {'pos': 353, 'val':0, 'len':2, 'typ':'h','unit':''} #in TPD file: stores mass channels
@@ -61,6 +61,7 @@ def convert_file(filename):
         var['val'] = struct.unpack('<'+var['typ'], 
                        dataset[var['pos']:var['pos']+var['len']])[0] #[0] because function returns a tuple
     
+    print("nCycles=", nCycles['val'])
     if nDatablocks['val'] > 2: 
         print('Too many datablocks - not supported (yet)!')
         return

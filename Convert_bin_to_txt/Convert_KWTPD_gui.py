@@ -112,7 +112,7 @@ class Window(QWidget):
         for filename in self.filelist:
             progress+=1
             #Variables
-            nCycles =       {'pos': 100, 'val':-1, 'len':2, 'typ':'h'} #number of measurement cycles
+            nCycles =       {'pos': 100, 'val':-1, 'len':4, 'typ':'i'} #number of measurement cycles
             nDatablocks =   {'pos': 112, 'val':-1, 'len':2, 'typ':'h'} #number of datablocks (store different types of data)
             nChannels1 =    {'pos': 203, 'val':0, 'len':2, 'typ':'h','unit':''} #in TPD file: stores external (temperature) channel. In KW file: stores mass channels
             nChannels2 =    {'pos': 353, 'val':0, 'len':2, 'typ':'h','unit':''} #in TPD file: stores mass channels
