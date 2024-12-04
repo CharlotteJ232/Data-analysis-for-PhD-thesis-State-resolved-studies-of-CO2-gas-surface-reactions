@@ -1,5 +1,6 @@
 *.png
 *.pdf
+.vscode/.ropeproject
 
 #### van internet #### 
 # Byte-compiled / optimized / DLL files
