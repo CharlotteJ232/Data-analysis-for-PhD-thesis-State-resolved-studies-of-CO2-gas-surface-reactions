@@ -1,0 +1,567 @@
+from dataclasses import dataclass
+from matplotlib import pyplot as plt
+import numpy as np
+from scipy.optimize import least_squares
+from matplotlib.ticker import (AutoMinorLocator, MultipleLocator)
+import os
+from matplotlib import cm
+import colorcet as cc
+
+folderstart = "C:/Users/jansenc3/surfdrive/DATA/"
+folderstart = "C:/Users/Werk/Surfdrive/DATA/"
+
+datalist = []
+
+def main():
+    # # 20230214 D2 15m
+    # datalist.append(Tpd_dataset(folder = '2023/02 Feb/230214/KW/',
+    # filename = 'tpd01.txt',
+    # gases = ['D2'],
+    # column_number = 1,
+    # start = 210, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 2.18E-7, #not super precise
+    # dosing_time = 15 #minutes
+    # ))
+
+    # # 20230214 D2 30m
+    # datalist.append(Tpd_dataset(folder = '2023/02 Feb/230214/KW/',
+    # filename = 'tpd02.txt',
+    # gases = ['D2'],
+    # column_number = 1,
+    # start = 150, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 2.17E-7, #not super precise
+    # dosing_time = 30 #minutes
+    # ))
+
+    # # 20230214 D2 1h
+    # datalist.append(Tpd_dataset(folder = '2023/02 Feb/230214/KW/',
+    # filename = 'tpd03.txt',
+    # gases = ['D2'],
+    # column_number = 1,
+    # start = 190, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 2.03E-7, #not super precise
+    # dosing_time = 60 #minutes
+    # ))
+
+    # # 20230214 D2 15m without flag 2 open
+    # datalist.append(Tpd_dataset(folder = '2023/02 Feb/230214/KW/',
+    # filename = 'tpd04.txt',
+    # gases = ['D2'],
+    # column_number = 1,
+    # start = 250, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 2.03E-7, #not super precise
+    # dosing_time = 15 #minutes, but beam was not on crystal
+    # ))
+
+    # # 20230316 D2 2h
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230316/KW/',
+    # filename = 'tpd01.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 135, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 2.8E-7 * 6.15/6.8, #not super precise, fixed for pause cal mistake
+    # dosing_time = 120.3 #minutes
+    # ))
+
+    # # 20230316 D2 no dosing
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230316/KW/',
+    # filename = 'tpd00.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 67, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 2.8E-7, #not super precise, used same one as tpd01
+    # dosing_time = 0 #minutes
+    # ))
+
+    # # 20230316 D2 30 min
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230316/KW/',
+    # filename = 'tpd02.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 55, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 2.71E-7, #not super precise, used same one as tpd01
+    # dosing_time = 30 #minutes
+    # ))
+
+    # # 20230316 D2 60 min
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230316/KW/',
+    # filename = 'tpd03.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 45, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 2.6E-7, #not super precise
+    # dosing_time = 60 #minutes
+    # ))
+
+    # # 20230317 D2 180 min
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230317/KW/',
+    # filename = 'tpd01.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 75, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 2.6E-7, #not super precise
+    # dosing_time = 180 #minutes
+    # ))
+    
+    # # 20230317 D2 15 min
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230317/KW/',
+    # filename = 'tpd02.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 95, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 2.58E-7, #not super precise
+    # dosing_time = 15 #minutes
+    # ))
+
+    # # 20230317 D2 0/15 min
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230317/KW/',
+    # filename = 'tpd03.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 135, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 2.55E-7, #not super precise
+    # dosing_time = 15 #minutes
+    # ))
+
+    # # 20230317 D2 0 min, 15 min background from SSB3
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230317/KW/',
+    # filename = 'tpd04.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 50, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 2.55E-7, #not super precise
+    # dosing_time = 0 #minutes
+    # ))
+
+
+    # # 20230317 D2 0/10 min
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230317/KW/',
+    # filename = 'tpd05.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 130, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 2.55E-7, #not super precise
+    # dosing_time = 10 #minutes
+    # ))
+
+    # # 20230317 D2 0/5 min
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230317/KW/',
+    # filename = 'tpd06.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 95, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 2.55E-7, #not super precise
+    # dosing_time = 5 #minutes
+    # ))
+
+    # # 20230321 D2 0/15 min
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230321/KW/',
+    # filename = 'tpd01.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 100, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 3.1E-7, #not super precise
+    # dosing_time = 15 #minutes
+    # ))
+
+    # # 20230321 D2 0/120 min
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230321/KW/',
+    # filename = 'tpd02.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 30, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 2.6E-7, #not super precise
+    # dosing_time = 120 #minutes
+    # ))
+
+    #------------------ Medium gat, 600-700K------------------------------
+
+    # # 20230324 D2 600K 0/60 min
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230324/KW/',
+    # filename = 'tpd01.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 92, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 7.7E-8, #not super precise
+    # dosing_time = 60 #minutes
+    # ))
+
+    # # 20230324 D2 700K 0 min
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230324/KW/',
+    # filename = 'tpd02.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 20, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 7.9E-8, #not super precise
+    # dosing_time = 0 #minutes
+    # ))
+
+    # # 20230324 D2 700K 0/15 min
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230324/KW/',
+    # filename = 'tpd03.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 35, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 8.0E-8, #not super precise
+    # dosing_time = 15 #minutes
+    # ))
+
+    # # 20230324 D2 700K 15 min
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230324/KW/',
+    # filename = 'tpd04.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 80, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 8.1E-8, #not super precise
+    # dosing_time = 15.3 #minutes
+    # ))
+
+    # # 20230324 D2 700K 60 min
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230324/KW/',
+    # filename = 'tpd05.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 37, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 7.9E-8, #not super precise
+    # dosing_time = 60.3 #minutes
+    # ))
+
+    # # 20230324 D2 700K 30 min
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230324/KW/',
+    # filename = 'tpd06.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 30, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 7.8E-8, #not super precise
+    # dosing_time = 30.3 #minutes
+    # ))
+    
+    # # 20230327 D2 700K 120 min
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230327/KW/',
+    # filename = 'tpd01.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 43, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 8.2E-8, #not super precise
+    # dosing_time = 120.3 #minutes
+    # ))
+
+    #------------- Na CO2 ---------------------------
+
+    # # 20230328 D2 700K 120 min, and after dosing CO2 for a whole night
+    # datalist.append(Tpd_dataset(folder = '2023/03 Mar/230328/KW/',
+    # filename = 'tpd01.txt',
+    # gases = ['D2'],
+    # column_number = 4,
+    # start = 890, #cycle number
+    # k_per_s = 2,
+    # temps = [250,430],
+    # kw_amp = 8E-8, #estimate, because this was the large orifice
+    # dosing_time = 120.3 #minutes
+    # ))
+
+    #------------- H2 700K --------------------------
+
+    # 20230328 H2 700K 30 min
+    datalist.append(Tpd_dataset(folder = '2023/03 Mar/230331/KW/',
+    filename = 'tpd02.txt',
+    gases = ['H2'],
+    column_number = 4,
+    start = 30, #cycle number
+    k_per_s = 2,
+    temps = [250,450],
+    kw_amp = 1.64E-7, #estimate, because this was the large orifice
+    dosing_time = 30.3 #minutes
+    ))
+
+    # 20230328 H2 700K 60 min
+    datalist.append(Tpd_dataset(folder = '2023/03 Mar/230331/KW/',
+    filename = 'tpd03.txt',
+    gases = ['H2'],
+    column_number = 4,
+    start = 60, #cycle number
+    k_per_s = 2,
+    temps = [250,450],
+    kw_amp = 1.5E-7, #estimate, because this was the large orifice
+    dosing_time = 60.3 #minutes
+    ))
+
+    # 20230328 H2 700K 0/60 min
+    datalist.append(Tpd_dataset(folder = '2023/03 Mar/230331/KW/',
+    filename = 'tpd04.txt',
+    gases = ['H2'],
+    column_number = 4,
+    start = 25, #cycle number
+    k_per_s = 2,
+    temps = [250,450],
+    kw_amp = 1.38E-7, #estimate, because this was the large orifice
+    dosing_time = 60 #minutes
+    ))
+
+    #-------- H2 850K --------------------
+
+    # 20230404 H2 0/15 min
+    datalist.append(Tpd_dataset(folder = '2023/04 Apr/230404/KW/',
+    filename = 'tpd01.txt',
+    gases = ['H2'],
+    column_number = 4,
+    start = 95, #cycle number
+    k_per_s = 2,
+    temps = [250,450],
+    kw_amp = 1.8E-7, #estimate, because this was the large orifice
+    dosing_time = 15 #minutes
+    ))
+
+    # 20230404 H2 60 min
+    datalist.append(Tpd_dataset(folder = '2023/04 Apr/230404/KW/',
+    filename = 'tpd03.txt',
+    gases = ['H2'],
+    column_number = 4,
+    start = 65, #cycle number
+    k_per_s = 2,
+    temps = [250,450],
+    kw_amp = 1.72E-7, #estimate, because this was the large orifice
+    dosing_time = 63.3 #minutes
+    ))
+
+    # 20230404 H2 0/60 min
+    datalist.append(Tpd_dataset(folder = '2023/04 Apr/230404/KW/',
+    filename = 'tpd04.txt',
+    gases = ['H2'],
+    column_number = 4,
+    start = 150, #cycle number
+    k_per_s = 2,
+    temps = [250,450],
+    kw_amp = 1.65E-7, #estimate, because this was the large orifice
+    dosing_time = 63 #minutes
+    ))
+
+    # 20230404 H2 15 min
+    datalist.append(Tpd_dataset(folder = '2023/04 Apr/230404/KW/',
+    filename = 'tpd05.txt',
+    gases = ['H2'],
+    column_number = 4,
+    start = 55, #cycle number
+    k_per_s = 2,
+    temps = [250,450],
+    kw_amp = 1.64E-7, #estimate, because this was the large orifice
+    dosing_time = 15.3 #minutes
+    ))
+
+    # 20230404 H2 0 min
+    datalist.append(Tpd_dataset(folder = '2023/04 Apr/230404/KW/',
+    filename = 'tpd06.txt',
+    gases = ['H2'],
+    column_number = 4,
+    start = 15, #cycle number
+    k_per_s = 2,
+    temps = [250,450],
+    kw_amp = 1.64E-7, #estimate, because this was the large orifice
+    dosing_time = 0 #minutes
+    ))
+
+    for dataset in datalist:
+        dataset.read_data()
+        # dataset.plot_raw_tpd()
+        dataset.convert_time_to_temp()
+        dataset.simple_background(n_for_avg=10) 
+        dataset.plot_tpd()
+        dataset.calculate_integral()
+        print(dataset.integral)
+    
+    plot_all_tpds(datalist)
+    plot_integrals(datalist)
+
+    for dataset in datalist:
+        dataset.read_data()
+        # dataset.plot_raw_tpd()
+        dataset.convert_time_to_temp()
+        dataset.simple_background(n_for_avg=15, stop=380,start=270) #start=290
+        dataset.plot_tpd()
+        dataset.calculate_integral()
+        print(dataset.integral)
+    
+    plot_all_tpds(datalist)
+    plot_integrals(datalist)
+
+def plot_integrals(datalist):
+    for dataset in datalist:
+        if dataset.dosing_time % 1:
+                plt.plot(dataset.dosing_time, dataset.integral, 's')
+        else:
+            plt.plot(dataset.dosing_time, dataset.integral, 'o')
+    plt.plot(-1, 0, 's', c='gray',label='Crystal dosing')
+    plt.plot(-1, 0, 'o',c='gray', label='Background')
+    plt.axis([0, None, 0, None])
+    plt.legend()
+    plt.xlabel('Dosing time (minutes)')
+    plt.ylabel('TPD peak integral (arbitrary units)')
+    plt.show()
+    plt.close()
+
+def plot_all_tpds(datalist):
+    for dataset in datalist:
+        corrected_data = (dataset.data[dataset.integral_start:dataset.integral_stop]-dataset.background)/dataset.kw_amp
+        if not dataset.dosing_time % 1:
+            plt.plot(dataset.temperature_bg, corrected_data, "--", label=str(dataset.dosing_time)+' min')
+        else:
+            plt.plot(dataset.temperature_bg, corrected_data, label=str(dataset.dosing_time)+' min')
+    plt.plot(-1,0,'--',c='gray', label='Background')
+    plt.plot(-1,0, c='gray',label='Crystal dosing')
+    plt.legend()
+    plt.axis([dataset.temperature_bg[0], dataset.temperature_bg[-1], 0, None])
+    plt.xlabel('approximate temperature (K)')
+    plt.ylabel('QMS signal corrected for QMS sensitivity')
+    plt.show()
+    plt.close()
+
+def calc_s0():
+    """
+    s = s0 * (1-coverage^2)
+    coverage(t) = integral from 0 to t of s(t) * flux
+    coverage(t) = integral of s0 * (1-coverage^2(t)) *flux
+    d coverage /dt = s0 * flux * (1-coverage^2(t))
+
+    simplified:
+    coverage = s * time * flux
+    s = coverage/time/flux
+
+    """
+    print('not using data from experiments yet')
+    p_d2 = 1E-7
+    flux = p_d2 / 1E-6
+
+
+
+
+
+@dataclass
+class Tpd_dataset:
+    folder: str = None
+    filename: str = None 
+    gases: list = None
+    column_number: int = None
+    start: int = None
+    k_per_s: float = None
+    temps: list = None
+    kw_amp: float = None
+    dosing_time: float = None #total dosing time of the molecule of interest
+
+    def read_data(self):
+        self.time, self.data = np.loadtxt(folderstart + self.folder + self.filename, skiprows=3, usecols=(0,self.column_number), unpack=True)
+    
+    def plot_raw_tpd(self):
+        plt.plot(self.time-self.time[0], self.data)
+        plt.title(self.dosing_time)
+        plt.show()
+        plt.close()
+
+    def convert_time_to_temp(self):
+        start_time = self.time[self.start]
+        end_time = start_time + (self.temps[1]-self.temps[0])/self.k_per_s
+        self.end = np.min(np.argwhere(self.time>end_time))
+        self.temperature = np.linspace(self.temps[0], self.temps[1], self.end-self.start)
+
+    def plot_tpd(self):
+        plt.plot(self.temperature, self.data[self.start:self.end])
+        plt.plot(self.temperature_bg, self.background)
+        plt.axis([self.temps[0],self.temps[1], None, None])
+        plt.title(self.dosing_time)
+        plt.show()
+        plt.close()
+
+    def simple_background(self, n_for_avg=20, start=None, stop=None):
+        if not start:
+            self.integral_start=self.start
+            start=self.temps[0]
+        else:
+            self.integral_start = self.start+np.where(self.temperature>start)[0][0]
+
+        if not stop:
+            self.integral_stop=self.end     
+            stop=self.temps[1]
+        else:  
+            self.integral_stop = self.start+np.where(self.temperature>stop)[0][0]
+
+        avg_before = np.average(self.data[self.integral_start-n_for_avg:self.integral_start])
+        avg_after = np.average(self.data[self.integral_stop-n_for_avg:self.integral_stop])
+        self.background = np.linspace(avg_before, avg_after, self.integral_stop-self.integral_start)
+        self.temperature_bg = np.linspace(start, stop, self.integral_stop-self.integral_start)
+
+
+
+
+    def calculate_integral(self, start=None, stop=None):
+        """
+        Corrects for KW amplitude
+        """
+        integral = np.sum(self.data[self.integral_start:self.integral_stop]-self.background)/(self.integral_stop-self.integral_start)
+        self.integral = integral / self.kw_amp
+
+
+
+    
+
+
+
+
+main()
+
+
+
+
+# datalist.append({'folder': '2023/02 Feb/230214/KW/',
+# 'filename': 'tpd03.txt',
+# 'gases':['D2'],
+# 'start':200, #cycle number
+# 'k/s':2,
+# 'temps':[250,430],
+# 'KW_amp':2.3E-7, #not super precise
+# 'dosing_time':60 #minutes
+# })

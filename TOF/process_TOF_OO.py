@@ -40,7 +40,7 @@ experiment_list = [] #list contains tuples (data_folder, nozzle_temp, nozzle_pre
 # experiment_list.append((directory+'DATA/2021/07 Jul/210726/TOF/', 573, 5900, 0.004, 0.004, 14, 7)) #30 mL/min
 # experiment_list.append((directory+'DATA/2021/07 Jul/210726/TOF/', 573, 4333, 0.004, 0.004, 21, 7)) #20 mL/min
 # experiment_list.append((directory+'DATA/2021/07 Jul/210726/TOF/', 673, 4805, 0.004, 0.004, 28, 7)) #20 mL/min
-experiment_list.append((directory+'DATA/2021/07 Jul/210727/TOF/', 573, 5340, 0.004, (0.004*25+0.044*0.5)/25.5, 0, 7)) #25.5 mL/min
+# experiment_list.append((directory+'DATA/2021/07 Jul/210727/TOF/', 573, 5340, 0.004, (0.004*25+0.044*0.5)/25.5, 0, 7)) #25.5 mL/min
 experiment_list.append((directory+'DATA/2021/07 Jul/210727/TOF/', 573, 5340, 0.044, (0.004*25+0.044*0.5)/25.5, 7, 7)) #25.5 mL/min
 # experiment_list.append((directory+'DATA/2021/09 Sep/210930/TOF/', 300, 3700, 0.004, (0.004*25+0.044*1)/26, 0, 7)) 
 # experiment_list.append((directory+'DATA/2021/09 Sep/210930/TOF/', 300, 3700, 0.044, (0.004*25+0.044*1)/26, 7, 7)) 
@@ -94,13 +94,20 @@ def main():
         exp = Experiment(data_folder, dataid, chopper_freq, gas_mass, avg_mass, nozzle_temp, measured_chopper_freq)
         exp.plot_raw_data(save=save_all_plots)
     
-        exp.fitparams = exp.fitpeaks()
+        # exp.fitparams = exp.fitpeaks()
+        testparams = exp.fitpeaks_double()
+        exp.fitparams = testparams[:-len(exp.datadict)-2]
+        exp.fitparams_second = np.concatenate((testparams[-len(exp.datadict):-2],np.zeros(len(exp.datadict)),testparams[[2*len(exp.datadict)+1, 2*len(exp.datadict)+3]],testparams[-2:]))
+        # print('first', exp.fitparams)
+        print('second', exp.fitparams_second)
+
+
     
         for nr, dataset in zip(range(len(exp.datadict)),exp.datadict.values()):
             print (nr)
-            dataset.plotfit(exp, nr, save=save_all_plots,isolate_peak=True)
+            dataset.plotfit(exp, nr, save=save_all_plots,isolate_peak=True, double=True)
         
-        exp.plot_v_E_distr(save=save_all_plots)
+        # exp.plot_v_E_distr(save=save_all_plots)
 
         print('Finished')
     
@@ -157,12 +164,14 @@ class Experiment:
 
         window_end = self.index_guess + self.index_window #for calculating the end of the analysis window for B_guess
         self.B_guess = np.average(list(self.datadict.values())[0].counts[window_end:window_end+10]) #background level, averaged over 10 data points after the analysis window
-        self.A_guess = 1E-13 #*(np.max(list(self.datadict.values())[0].counts[self.index_window])-self.B_guess) #amplitude, random factor 
+        self.A_guess = 1E-11 #*(np.max(list(self.datadict.values())[0].counts[self.index_window])-self.B_guess) #amplitude, random factor 
 
         self.params = [self.A_guess for i in range(len(self.datadict))] 
         self.params += [self.B_guess for i in range(len(self.datadict))]
         self.params += [self.L_guess, self.v0_guess, self.ts_guess, self.alpha_guess]
+        self.params_double = [self.A_guess*0.5 for i in range(len(self.datadict))] + [self.v0_guess*0.9, self.alpha_guess] #parameters for (optional) second peak
         self.params = np.array(self.params)
+        self.params_double = np.array(self.params_double)
 
         
     def read_datasets(self, dataid):
@@ -341,6 +350,79 @@ class Experiment:
         
         np.savetxt(savefolder+'fitparams.txt',for_saving,header='Name, guess, fit',fmt='%s')
         return result.x
+
+    def fitpeaks_double(self):
+        """
+        Fits a double peak to the TOF data. 
+        Fits the data in the following way:
+            - For each dataset, it calculates the expected values, by taking the 
+            current fitparameters and filling those in in the function. The 
+            function is the molecular beam functional form for a density sensitive
+            detector, and convolution with the width of the chopper hole is taken
+            into account by adding a number of peaks shifted slightly with respect
+            to each other.
+            - Then, the residuals are calculated (data - expected values) by the
+            function err_leastsq()
+            - These residuals are put in a list for all datasets combined by the
+            function err_multiple_leastsq()
+            - Residuals are then minimized by least_squares (from scipy.optimize)
+            
+        Notes: The fit parameters L, t0, ts, alpha are the same for all datasets. 
+        fit parameters A and B vary between datasets (as these are not physical parameters). 
+        There are two t0 and alpha fit parameters, for the two different peaks.
+        There is one set of extra A parameters for the second peak
+        """
+   
+        def err_multiple_leastsq(parameters):
+            # parameters = n*A, n*B, L, v0, ts, alpha, n*A2, v02, alpha2
+            #  print (parameters)
+            residual_list=np.array([])
+            for nr, dataset in zip(range(len(self.datadict)),self.datadict.values()):
+                n = len(self.datadict) #number of A, B, and A2
+                parameters2 = parameters[[int(nr), int(nr)+n,2*n, 2*n+1, 2*n+2, 2*n+3]]
+                parameters_double = parameters[[-n-2+int(nr),-2,-1]] #A2, v02, alpha2
+                residual_list = np.concatenate((residual_list, err_leastsq_double(parameters2, parameters_double, dataset.time[self.index_guess-self.index_window:self.index_guess+self.index_window], dataset.counts[self.index_guess-self.index_window:self.index_guess+self.index_window], dataset.chopper_freq, dataset.position)))
+                
+            #  print(residual_list)
+            return residual_list[1:]
+        
+        parameters_for_fit = np.concatenate((self.params, self.params_double))
+        #Make bounds for the fit parameters
+        factors = [100000 for i in range(len(self.datadict))] + [5 for i in range(len(self.datadict))] #determines the bounds on the fit parameters
+        factors += [1.001, 2, 5, 5]
+        factors += [100000 for i in range(len(self.datadict))]
+        factors += [1.001, 1.001]
+        factors = np.array(factors) * increase_fit_bounds  #multiplied by easily accessible variable, so we can increase fit bounds if necessary
+        
+        upper = parameters_for_fit*factors 
+
+        upper[-2] += 0.1 #because ts is a very small number a shift works better than a factor
+        lower = parameters_for_fit/factors
+        # lower[-2] = 1E-10 #just a very small number because it should not be negative or zero 
+      
+        bounds = (lower, upper)
+        
+
+        #The fit
+        #  import pdb; pdb.set_trace()
+        result = least_squares(err_multiple_leastsq, parameters_for_fit, bounds=bounds) #verbose=1, x_scale=1/np.array([1e-10, 1e2, 500, 0.3, 0.01, 1e3])
+        
+        #  print ('success',result.success)
+        #  print (result.message)
+        print ('parameters', parameters_for_fit) #initial guess for parameters
+        print ('x', result.x) #fitted parameters
+        print ('ts', result.x[-2])
+        print (result.x[-4:])
+        
+        paramnames = np.array(['L','v0','Ts','alpha'])
+        
+        for_saving = np.column_stack((paramnames, self.params[-4:], result.x[-4:]))
+        
+        print(for_saving)
+        
+        np.savetxt(savefolder+'fitparams_second.txt',for_saving,header='Name, guess, fit',fmt='%s')
+        return result.x
+
         
     def plot_v_E_distr(self, save=False):
         """
@@ -421,13 +503,21 @@ class Dataset:
         self.firstpeak = firstpeak    
 
      
-    def plotfit(self, experiment, nr, save=False, isolate_peak=False):
+    def plotfit(self, experiment, nr, save=False, isolate_peak=False, double=False):
         guess = fitfunction_convolution(self.time[experiment.index_guess-experiment.index_window:experiment.index_guess+experiment.index_window],
                 *experiment.params[[int(nr), int(nr)+len(experiment.datadict), -4,-3,-2,-1]], self.chopper_freq, pos = self.position,use_v0=True)
         
         fit = fitfunction_convolution(self.time[experiment.index_guess-experiment.index_window:experiment.index_guess+experiment.index_window],
-              *experiment.fitparams[[int(nr), int(nr)+len(experiment.datadict), -4,-3,-2,-1]], self.chopper_freq, pos = self.position,use_v0=True)
+              *experiment.fitparams_second[[int(nr), int(nr)+len(experiment.datadict), -4,-3,-2,-1]], self.chopper_freq, pos = self.position,use_v0=True)
         
+
+        print('plot', experiment.fitparams_second[[int(nr), int(nr)+len(experiment.datadict), -4,-3,-2,-1]])
+
+        if double:
+            fit += fitfunction_convolution(self.time[experiment.index_guess-experiment.index_window:experiment.index_guess+experiment.index_window],
+                *experiment.fitparams_second[[int(nr), int(nr)+len(experiment.datadict), -4,-3,-2,-1]], self.chopper_freq, pos = self.position,use_v0=True)
+
+
         plt.plot(self.time, self.counts, label='Data')
         t_fit = self.time[experiment.index_guess-experiment.index_window:experiment.index_guess+experiment.index_window]
         plt.plot(t_fit, guess, c='g', label='Guess')
@@ -451,6 +541,7 @@ class Dataset:
         
         plt.show()
         plt.close()
+
         
 
         
@@ -506,7 +597,16 @@ def get_chopper_amplitudes(n, chopper_freq, r_beam=0.23, w_slit=0.85): #r and w 
     
     return t_values, amplitudes
 
-
+def err_leastsq_double(parameters, parameters_double, t, counts, chopper_freq, pos):
+    """
+    Parameters here are: A,B,L,v0,ts,alpha,v02,alpha2
+    """
+    # print (parameters)
+    y = fitfunction_convolution(t, *parameters, chopper_freq, pos=pos, use_v0=True)
+    parameters_second = np.concatenate(([parameters_double[0]],parameters[[1,2,4]],parameters_double[[1,2]]))
+    y += fitfunction_convolution(t, *parameters_second, chopper_freq, pos=pos, use_v0=True)
+    # print (counts,y)
+    return counts-y
 
 
 def err_leastsq(parameters, t, counts, chopper_freq, pos):
@@ -518,6 +618,7 @@ def err_leastsq(parameters, t, counts, chopper_freq, pos):
 
 def fitfunction_convolution(t, A, B, L, t0, ts, alpha, chopper_freq,corr_dens=False, n=15, pos=0, use_v0=False):
     """
+    This function returns the function y values for a certain set of fit parameters. 
     A = amplitude
     B = background
     L = flight path length

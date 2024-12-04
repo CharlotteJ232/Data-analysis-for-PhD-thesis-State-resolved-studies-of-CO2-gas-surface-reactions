@@ -2,41 +2,59 @@ import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.ticker import (AutoMinorLocator,MultipleLocator)
+import os
 
 
 folderstart = "C:/Users/jansenc3/surfdrive/DATA/"
-# folderstart = "C:/Users/Werk/Surfdrive/DATA/"
-folder = '2022/01 Jan/220114/KW/'
-savefolder = 'CO2_on_CO2/Figures/'
-kwname = 'KW03'
-start = 75
-stop = 450
-save_figures=True
+folderstart = "C:/Users/Werk/Surfdrive/DATA/"
+# folder = '2022/01 Jan/220114/KW/' #old
+folder = '2023/05 May/230508/Pressure/'
+savefolder = 'CO2_on_CO2/Figures/2023/'
+# kwname = 'KW03' #old
+kwname = 'onresonance_R4'
+lasername = 'onresonance_R4_laser'
+# start = 75
+# stop = 450
+start = 1
+stop = 5200
+save_figures=False
 
 
 def main():
-    time, modulation, data = np.loadtxt(folderstart+folder+kwname+'.txt', skiprows=1, unpack=True)
+    if save_figures:
+        if not os.path.exists(folderstart+savefolder):
+            os.makedirs(folderstart+savefolder)
+
+    time, data = np.loadtxt(folderstart+folder+kwname+'.txt', skiprows=0, usecols=(0, 1), unpack=True)
     time -= time[0]
+    time_laser, modulation = np.loadtxt(folderstart+folder+lasername+'.txt', skiprows=1, usecols=(0,1),unpack=True)
+    time_laser -= time_laser[0]
 
     # kw_plot(time, data)
     # kw_plot(time, data, axis=[30,36,None,None])
     # kw_plot(time, data, axis=[474,482,None,None])
     
+    #repeat normalization for both opening and closing flag 1
     norm1 = kw_normalize(time, data, low1=31,low2=33,high1=34,high2=36)
     norm2 = kw_normalize(time, data, low1=479,low2=481,high1=476,high2=478)
     norm = (norm1+norm2)/2
+    #normalization placeholder until new measurement
+    norm = 1.2E-8
+    print(norm)
 
     #KW plot
-    kw_plot(time, (data-np.min(data))/norm, start=start, stop=stop, save=save_figures, axis=[0,500,0,1.6])
+    kw_plot(time, data/norm, start=start, stop=stop, save=save_figures, axis=[start,stop,0,1])
 
     #FFT plot
     fft_plot(xmin=4.9, xmax=5.1, save=save_figures, norm=norm)
 
     #mask plot
-    mask_plot(time, modulation, data, axis=[300, 301, None,None], save=save_figures)
+    mask_plot(time,time_laser, modulation, data, axis=[300, 301, None,None], save=save_figures)
 
     #difference plot
     difference_plot(norm=norm, axis=[-0.3,0.3, -0.0008,0.0008], save=save_figures)
+
+
 
 
 
@@ -71,7 +89,7 @@ def kw_plot(time, data, axis=[None,None,None,None], start=None, stop=None, save=
     plt.close()
 
 #FFT plot
-def fft_plot(xmin=None,xmax=None, save=False, norm=1):
+def fft_plot(xmin=None,xmax=None, save=False, norm=1, freq=3.0, freq_tolerance=1E-4):
     fftfreq_laser, fft_laser = np.loadtxt(folderstart+folder+kwname+'/fft_laser_'+str(start)+'_'+str(stop)+'.txt', unpack=True, skiprows=1)
     fftfreq, fft = np.loadtxt(folderstart+folder+kwname+'/fft_'+str(start)+'_'+str(stop)+'.txt', unpack=True, skiprows=1)
     #Check if fftfreq_laser and fftfreq are the same
@@ -94,23 +112,25 @@ def fft_plot(xmin=None,xmax=None, save=False, norm=1):
     #integration over the entire peak to get the actual value?
     fmin = 4.933 #chosen such that integration over fft_freq peak is exactly 5, which is the real modulation amplitude
     fmax = 5.067
+    fmin = 2.933
+    fmax = 3.067
     window = (fftfreq_laser > fmin) * (fftfreq_laser < fmax)
-    print(np.sum(fft_laser[window]))
+    print("laser peak integral stuff \n", np.sum(fft_laser[window]))
 
     # #integrate fft * fft_laser to integrate over the part of fft with the same shape as fft_freq
     # #something is not right here
     # print(np.sum(fft[window]*fft_laser[window])/np.sum(fft_laser[window]))
 
-    #maybe this is the right way to normalize
-    center = (fftfreq_laser > 4.999) * (fftfreq_laser < 5.001)
-    print(fft_laser[center])
-    print(np.sum(fft[window]*fft_laser[window])/np.sum(fft_laser[center]))
+    # #maybe this is the right way to normalize
+    # center = (fftfreq_laser > freq-0.001) * (fftfreq_laser < freq+0.001)
+    # print(fft_laser[center])
+    # print(np.sum(fft[window]*fft_laser[window])/np.sum(fft_laser[center]))
 
-    #or maybe this.. 
-    center = (fftfreq_laser > 4.999) * (fftfreq_laser < 5.001)
-    print(fft[center])
-    print(fft[center]/fft_laser[center]*np.sum(fft_laser[window]))
-    print(np.sum(fft[center]*fft_laser[window])/np.sum(fft_laser[center]))
+    # #or maybe this.. 
+    center = (fftfreq_laser > freq-freq_tolerance) * (fftfreq_laser < freq+freq_tolerance)
+    # print(fft[center])
+    # print(fft[center]/fft_laser[center]*np.sum(fft_laser[window]))
+    # print(np.sum(fft[center]*fft_laser[window])/np.sum(fft_laser[center]))
 
     
     #ACTUAL PLOT START
@@ -152,12 +172,13 @@ def fft_plot(xmin=None,xmax=None, save=False, norm=1):
     plt.close()
 
 #mask plot
-def mask_plot(time, modulation, data, axis=[None,None,None,None], save=False):
+def mask_plot(time, time_laser, modulation, data, axis=[None,None,None,None], save=False):
+    print('mask plot')
     fig, (ax1,ax2) = plt.subplots(2,1, sharex='all')
     fig.subplots_adjust(hspace=0)
     modulation_norm = np.max(modulation)
     ax1.plot(time, data, label='CO$_2$ partial pressure')
-    ax2.plot(time, modulation/modulation_norm, label='Laser modulation')
+    ax2.plot(time_laser, modulation/modulation_norm, label='Laser modulation')
 
     ax1.text(0.025, 0.82, 'a)', transform=ax1.transAxes)
     ax2.text(0.025, 0.82, 'b)', transform=ax2.transAxes)
@@ -175,7 +196,7 @@ def mask_plot(time, modulation, data, axis=[None,None,None,None], save=False):
         ax.legend(loc='lower right')
 
     #axis limits
-    ax1.set_ylim(6.2,6.5)
+    ax1.set_ylim(5.65E-9,5.75E-9)
     ax2.set_ylim(-0.5, 1.5)
     ax2.set_xlim(axis[0],axis[1])
 
@@ -186,6 +207,7 @@ def mask_plot(time, modulation, data, axis=[None,None,None,None], save=False):
 
 #mask plot 2
 def mask_plot2(time, modulation, data, axis=[None,None,None,None], save=False):
+    print('mask plot 2')
     fig, (ax1,ax2,ax3) = plt.subplots(3,1, sharex='all')
     fig.subplots_adjust(hspace=0)
     modulation_norm = np.max(modulation)
@@ -261,6 +283,10 @@ def difference_plot(norm=1, axis=[None,None,None,None], save=False, freq=5):
 
 
 def kw_normalize(time, data, low1=None, low2=None, high1=None, high2=None):
+    """
+    low1, low2, time bounds for where the pressure is low (a small area on one side of the pressure jump)
+    high1, high2 time bounds for where the pressure is high (close to the low bounds)
+    """
     masklow = (time>low1) * (time<low2)
     maskhigh = (time>high1) * (time<high2)
     return np.average(data[maskhigh]) - np.average(data[masklow])

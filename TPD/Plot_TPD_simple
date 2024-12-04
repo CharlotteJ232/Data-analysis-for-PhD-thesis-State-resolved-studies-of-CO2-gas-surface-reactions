@@ -1,0 +1,433 @@
+from dataclasses import dataclass
+from matplotlib import pyplot as plt
+import numpy as np
+from scipy.optimize import least_squares
+from matplotlib.ticker import (AutoMinorLocator, MultipleLocator)
+import os
+from matplotlib import cm
+import colorcet as cc
+
+folderstart = "C:/Users/jansenc3/surfdrive/DATA/"
+folderstart = "C:/Users/Werk/Surfdrive/DATA/"
+
+datalist = []
+colorscheme = {'CO2':'black', 'H2':'red', 'HD':'purple', 'H':'orange', 'D2':'blue', 'CO':'gray', 'H2O':'cyan', 'O2':'green', 'D2CO':'orange'}
+ext='.txt'
+labels = {'CO2':'m/e=44 (CO$_2$)', 'H2':'m/e=2 (H$_2$, D)', 'D2':'m/e=4 (D$_2$)', 'CO':'m/e=28 (CO)'}
+
+save_to_daily_folder=False
+save_to_thesis_folder=True
+thesis_folder = "C:/Users/Werk/Surfdrive/Proefschrift/Cobalt/Figures/"
+
+def main():
+
+    # datalist.append(Tpd_dataset(folder = '2024/01 Jan/240116/tpd/',
+    # filename = 'tpd01',
+    # gases = {'CO2':3, 'CO':2, 'D2':4, 'H2':5}, #gas and then column number
+    # k_per_s = 3,
+    # temps = [250,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 0, #minutes
+    # label='CO2 with D2 250K'
+    # ))
+
+    # datalist.append(Tpd_dataset(folder = '2024/01 Jan/240117/tpd/',
+    # filename = 'tpd02',
+    # gases = {'CO2':3, 'CO':2, 'D2':5, 'H2':4}, #gas and then column number
+    # k_per_s = 3,
+    # temps = [250,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 0, #minutes
+    # label='CO 250K'
+    # ))
+
+    # datalist.append(Tpd_dataset(folder = '2024/01 Jan/240119/tpd/',
+    # filename = 'tpd01',
+    # gases = {'CO2':3, 'CO':2, 'D2':5, 'H2':4}, #gas and then column number
+    # k_per_s = 3,
+    # temps = [250,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 0, #minutes
+    # label='CO with O2 250K'
+    # ))
+
+
+
+    # datalist.append(Tpd_dataset(folder = '2024/01 Jan/240122/tpd/',
+    # filename = 'tpd01',
+    # gases = {'CO2':3, 'CO':2, 'D2':5, 'H2':4}, #gas and then column number
+    # k_per_s = 3,
+    # temps = [130,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 0, #minutes
+    # label='CO2 with H2 130K'
+    # ))
+
+
+
+    # datalist.append(Tpd_dataset(folder = '2023/12 Dec/231215/tpd/',
+    # filename = 'tpd01',
+    # gases = {'CO2':3, 'CO':2, 'H2':5}, #gas and then column number , 'O2':4, 'H2O':6
+    # k_per_s = 3,
+    # temps = [100,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 0, #minutes
+    # label='CO2 on dirty crystal 100K'
+    # ))
+
+    # datalist.append(Tpd_dataset(folder = '2023/12 Dec/231214/tpd/',
+    # filename = 'tpd01',
+    # gases = {'CO2':3, 'CO':2, 'H2':5}, #gas and then column number , 'O2':4, 'H2O':6
+    # k_per_s = 3,
+    # temps = [100,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 0, #minutes
+    # label='CO2 on clean crystal 100K'
+    # ))
+
+    # datalist.append(Tpd_dataset(folder = '2024/01 Jan/240112/tpd/',
+    # filename = 'tpd01',
+    # gases = {'CO':2, 'H2':4}, #gas and then column number 'CO2':3,
+    # k_per_s = 3,
+    # temps = [100,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 0, #minutes
+    # label='Background "dosing"'
+    # ))
+
+    # datalist.append(Tpd_dataset(folder = '2024/01 Jan/240112/tpd/',
+    # filename = 'tpd02',
+    # gases = {'CO':2, 'H2':4}, #gas and then column number 'CO2':3,
+    # k_per_s = 3,
+    # temps = [100,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 0, #minutes
+    # label='Dosing H2 during cooldown'
+    # ))
+
+    # datalist.append(Tpd_dataset(folder = '2024/01 Jan/240112/tpd/',
+    # filename = 'tpd03',
+    # gases = {'CO':2, 'D2':4, 'H2':5}, #gas and then column number 'CO2':3,
+    # k_per_s = 3,
+    # temps = [100,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 0, #minutes
+    # label='Dosing D2 during cooldown'
+    # ))
+
+    # datalist.append(Tpd_dataset(folder = '2024/01 Jan/240129/tpd/',
+    # filename = 'tpd01',
+    # gases = {'CO':2,'H':3, 'H2':4,'HD':5, 'D2':6}, #, 'H2O':7  gas and then column number 
+    # k_per_s = 3,
+    # temps = [250,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 0, #minutes
+    # label='Background dosing'
+    # ))
+
+    # datalist.append(Tpd_dataset(folder = '2024/01 Jan/240129/tpd/',
+    # filename = 'tpd02',
+    # gases = {'CO':2,'H':3, 'H2':4,'HD':5, 'D2':6}, #, 'H2O':7  gas and then column number 
+    # k_per_s = 3,
+    # temps = [250,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 0, #minutes
+    # label='Background dosing'
+    # ))
+        
+    # datalist.append(Tpd_dataset(folder = '2024/01 Jan/240129/tpd/',
+    # filename = 'tpd03',
+    # gases = {'CO':2,'H':3, 'H2':4,'HD':5, 'D2':6}, #, 'H2O':7  gas and then column number 
+    # k_per_s = 3,
+    # temps = [250,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 0, #minutes
+    # label='Background dosing'
+    # ))
+
+    # datalist.append(Tpd_dataset(folder = '2024/01 Jan/240129/tpd/',
+    # filename = 'tpd04',
+    # gases = {'CO':2,'H':3, 'H2':4,'HD':5, 'D2':6}, #, 'H2O':7  gas and then column number 
+    # k_per_s = 3,
+    # temps = [250,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 0, #minutes
+    # label='Short background dosing'
+    # ))
+
+    # datalist.append(Tpd_dataset(folder = '2024/01 Jan/240129/tpd/',
+    # filename = 'tpd05',
+    # gases = {'CO':2,'H':3, 'H2':4,'HD':5, 'D2':6}, #, 'H2O':7  gas and then column number 
+    # k_per_s = 3,
+    # temps = [250,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 0, #minutes
+    # label='D2 cooldown'
+    # ))
+
+    # datalist.append(Tpd_dataset(folder = '2024/02 Feb/240201/tpd/',
+    # filename = 'tpd01',
+    # gases = {'CO':2,'CO2':3, 'H2':4, 'D2':5, 'D2CO':7 }, # '30':6,
+    # k_per_s = 3,
+    # temps = [250,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 0, #minutes
+    # label='D2 + 10m CO2'
+    # ))
+
+    # datalist.append(Tpd_dataset(folder = '2024/02 Feb/240201/tpd/',
+    # filename = 'tpd02',
+    # gases = {'CO':2,'CO2':3, 'H2':4, 'D2':5, 'D2CO':7 }, # '30':6,
+    # k_per_s = 3,
+    # temps = [250,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 0, #minutes
+    # label='D2 + 5m CO2'
+    # ))
+
+    # datalist.append(Tpd_dataset(folder = '2024/02 Feb/240201/tpd/',
+    # filename = 'tpd03',
+    # gases = {'CO':2,'CO2':3, 'H2':4, 'D2':5, 'D2CO':7 }, # '30':6,
+    # k_per_s = 3,
+    # temps = [250,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 0, #minutes
+    # label='D2 + 2m CO2'
+    # ))
+
+    # datalist.append(Tpd_dataset(folder = '2024/02 Feb/240201/tpd/',
+    # filename = 'tpd04',
+    # gases = {'CO':2,'CO2':3, 'H2':4, 'D2':5, 'D2CO':7 }, # '30':6,
+    # k_per_s = 3,
+    # temps = [250,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 0, #minutes
+    # label='D2 + 10m CO2'
+    # ))
+
+    # datalist.append(Tpd_dataset(folder = '2023/12 Dec/231222/tpd/',
+    # filename = 'tpd03',
+    # gases = {'CO':2,'CO2':3, 'H2':4}, # 
+    # k_per_s = 3,
+    # temps = [250,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 5, #minutes
+    # label='CO2 "clean" crystal'
+    # ))
+
+    # datalist.append(Tpd_dataset(folder = '2023/12 Dec/231222/tpd/',
+    # filename = 'tpd04',
+    # gases = {'CO':2,'CO2':3, 'H2':4}, # 
+    # k_per_s = 3,
+    # temps = [250,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 10, #minutes
+    # label='CO2 "clean" crystal'
+    # ))
+
+    # datalist.append(Tpd_dataset(folder = '2023/12 Dec/231222/tpd/',
+    # filename = 'tpd01',
+    # gases = {'CO':2,'CO2':3, 'H2':4}, # 
+    # k_per_s = 3,
+    # temps = [250,650],
+    # t_shift = 0,
+    # kw_amp = 400, 
+    # dosing_time = 10, #minutes
+    # label='CO2 "clean" crystal'
+    # ))
+
+
+    datalist.append(Tpd_dataset(folder = '2023/12 Dec/231201/tpd/',
+    filename = 'tpd04',
+    gases = {'CO':2,'CO2':3, 'H2':4}, # 
+    k_per_s = 3,
+    temps = [100,650],
+    t_shift = 0,
+    kw_amp = 400, 
+    dosing_time = 2, #minutes
+    label='CO2 clean crystal' #"clean"
+    ))
+
+    # datalist.append(Tpd_dataset(folder = '2024/02 Feb/240223/tpd/',
+    # filename = 'tpd01',
+    # gases = {'CO':2,'CO2':3, 'H2':4, 'D2':5}, # '30':6, , 'D2CO':7 
+    # k_per_s = 3,
+    # temps = [250,650],
+    # t_shift = 0,
+    # kw_amp = 0.214-0.013, 
+    # dosing_time = 105, #minutes
+    # label='D2 + 60m CO'
+    # ))
+
+    datalist.append(Tpd_dataset(folder = '2024/01 Jan/240125/tpd/',
+    filename = 'tpd01',
+    gases = {'CO2':3, 'CO':2, 'D2':5, 'H2':4}, #gas and then column number
+    k_per_s = 3,
+    temps = [250,650],
+    t_shift = 0,
+    kw_amp = 400, 
+    dosing_time = 0, #minutes
+    label='CO2 with D2 250K'
+    ))
+
+    datalist.append(Tpd_dataset(folder = '2024/01 Jan/240119/tpd/',
+    filename = 'tpd01',
+    gases = {'CO2':3, 'CO':2, 'D2':5, 'H2':4}, #gas and then column number
+    k_per_s = 3,
+    temps = [250,650],
+    t_shift = 0,
+    kw_amp = 400, 
+    dosing_time = 0, #minutes
+    label='CO with O2 250K'
+    ))
+
+    for dataset in datalist:
+        print(dataset.folder)
+        dataset.read_data()
+        # dataset.plot_raw_tpd()
+        # dataset.convert_voltage_to_temp()
+        # print(dataset.temperature)
+        dataset.plot_tpds()
+        dataset.plot_tpds_normalized()
+    
+    # plot_all_tpds(datalist)
+    # plot_integrals(datalist)
+
+
+def plot_all_tpds(datalist, approximate_T=False):
+    for dataset in datalist:
+        corrected_data = (dataset.data[dataset.integral_start:dataset.integral_stop]-dataset.background)/dataset.kw_amp
+        if approximate_T:
+            plt.plot(dataset.temperature_bg, corrected_data, label=dataset.label)
+        else:
+            if dataset.t_shift == None:
+                shift = 0
+            else:
+                shift = dataset.t_shift
+            plt.plot(dataset.temperature[dataset.integral_start:dataset.integral_stop]+shift, corrected_data, label='shift='+str(dataset.t_shift)+', '+dataset.label)
+    # plt.plot(-1,0,'--',c='gray', label='Background')
+    # plt.plot(-1,0, c='gray',label='Crystal dosing')
+    plt.legend(fontsize=8, loc='upper right',bbox_to_anchor=(1.3, 1))
+    plt.axis([dataset.temperature_bg[0], dataset.temperature_bg[-1], 0, None])
+    plt.xlabel('approximate temperature (K)')
+    plt.ylabel('QMS signal')
+    plt.show()
+    plt.close()
+
+
+
+
+
+
+@dataclass
+class Tpd_dataset:
+    folder: str = None
+    filename: str = None 
+    gases: dict = None
+    k_per_s: float = None
+    temps: list = None
+    t_shift: float = None
+    kw_amp: float = None
+    dosing_time: float = None #total dosing time of the molecule of interest
+    label: str = None
+
+    def read_data(self, temperature_column=1):
+        """
+        """
+        self.data={}
+        self.time, self.voltage= np.loadtxt(folderstart + self.folder + self.filename + ext, skiprows=3, usecols=(0,temperature_column), unpack=True)
+        for gas in list(self.gases.keys()):
+            self.data[gas]=np.loadtxt(folderstart + self.folder + self.filename + ext, skiprows=3, usecols=self.gases[gas], unpack=True)
+            
+
+    def plot_raw_tpd(self):
+        plt.plot(self.time-self.time[0], self.data)
+        plt.title(self.dosing_time)
+        plt.show()
+        plt.close()
+
+    def plot_tpds(self, use_gases=None):
+        if not use_gases:
+            use_gases = list(self.gases.keys())
+        
+        self.convert_voltage_to_temp()
+        fig, ax=plt.subplots()
+        for gas in use_gases:
+            ax.plot(self.temperature, self.data[gas], c=colorscheme.get(gas),label=labels[gas])
+        
+        ax.set_xlim(self.temps)
+        ax.set_xlabel('Temperature (K)')
+        ax.set_ylabel('QMS signal')
+        ax.legend(loc='best')
+        if save_to_daily_folder:
+            savefolder = folderstart + self.folder + self.filename + '/'
+            if not os.path.exists(savefolder):
+                os.makedirs(savefolder)
+            fig.savefig(savefolder + 'tpd.png',dpi=500)
+        if save_to_thesis_folder:
+            savefolder = thesis_folder
+            fig.savefig(savefolder + 'tpd'+self.label+'.pdf',dpi=500)
+
+    def plot_tpds_normalized(self, use_gases=None):
+        if not use_gases:
+            use_gases = list(self.gases.keys())
+        
+        self.convert_voltage_to_temp()
+        fig, ax=plt.subplots()
+        for gas in use_gases:
+            data = self.data[gas]-np.min(self.data[gas])
+            max_norm = np.max(self.data['CO']-np.min(self.data['CO']))
+            ax.plot(self.temperature, data/np.max(data), c=colorscheme.get(gas), label=labels[gas]+', x'+str(np.round(max_norm/np.max(data),1)))
+        
+        ax.set_xlim(self.temps)
+        ax.set_xlabel('Temperature (K)')
+        ax.set_ylabel('QMS signal (normalized)')
+        ax.legend(loc='best')
+        if save_to_daily_folder:
+            savefolder = folderstart + self.folder + self.filename + '/'
+            if not os.path.exists(savefolder):
+                os.makedirs(savefolder)
+            fig.savefig(savefolder + 'tpd_normalized.png',dpi=500)
+        if save_to_thesis_folder:
+            savefolder = thesis_folder
+            fig.savefig(savefolder + 'tpd_normalized'+self.label+'.pdf',dpi=500)
+
+    def convert_voltage_to_temp(self):
+        """ 
+        Uses beginning and end voltage of the file, not min and max
+        """
+        v_low = np.average(self.voltage[:10])
+        v_high = np.average(self.voltage[-10:])
+        K_per_V = (self.temps[1]-self.temps[0])/(v_high-v_low)
+        V0 = v_low - self.temps[0]/K_per_V
+        self.temperature = (self.voltage-V0)*K_per_V
+        # print(self.temperature)
+
+
+
+
+
+main()
+
+
+

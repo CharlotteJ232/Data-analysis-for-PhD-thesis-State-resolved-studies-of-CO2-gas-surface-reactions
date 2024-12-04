@@ -8,6 +8,7 @@ from matplotlib.ticker import (AutoMinorLocator, MultipleLocator)
 import os
 from matplotlib import cm
 import colorcet as cc
+# from RAIRS_analysis_plot_functions import *
 import math
 import re
 
@@ -19,333 +20,214 @@ mpl.rcParams['ytick.labelsize']=textsize
 mpl.rcParams['axes.labelsize']=textsize
 
 
-
-
-datalist = []
-
-# # 20221205 With laser on resonance
-# datalist.append({'folder': '2022/12 Dec/221205/RAIRS/',
-# 'filestart': '7CO2_12He_100K_laseron',
-# 'min_filenum': 0,
-# 'max_filenum': 20 #max 20
-# })
-
-# # 20221205 With laser off resonance, dirty crystal
-# datalist.append({'folder': '2022/12 Dec/221205/RAIRS/',
-# 'filestart': '7CO2_12He_100K_laseroff',
-# 'min_filenum': 0,
-# 'max_filenum': 19 #max 19
-# })
-
-# # 20221205 With laser on resonance, dirty crystal
-# datalist.append({'folder': '2022/12 Dec/221205/RAIRS/',
-# 'filestart': '7CO2_12He_100K_laseron2',
-# 'min_filenum': 0,
-# 'max_filenum': 21 #max 21
-# })
-
-# # # 20221208 With laser off resonance
-# datalist.append({'folder': '2022/12 Dec/221208/RAIRS/',
-# 'filestart': '7CO2_12He_100K_laseroff',
-# 'min_filenum': 0,
-# 'max_filenum': 38 #max 39
-# })
-
-# # # 20221212 With laser on resonance
-# datalist.append({'folder': '2022/12 Dec/221212/RAIRS/',
-# 'filestart': '7CO2_12He_100K_laseron',
-# 'min_filenum': 0,
-# 'max_filenum': 28 #max 28
-# })
-
-# # # 20221213 With laser off resonance
-# datalist.append({'folder': '2022/12 Dec/221213/RAIRS/',
-# 'filestart': '7CO2_12He_100K_laseroff',
-# 'min_filenum': 0,
-# 'max_filenum': 20 #max 20
-# })
-
-# # 20221216 With laser off resonance
-# datalist.append({'folder': '2022/12 Dec/221216/RAIRS/',
-# 'filestart': '1CO2_14He_100K_laseroff',
-# 'min_filenum': 0,
-# 'max_filenum': 23 #max 23
-# })
-
-# # 20221219 With laser on resonance
-# datalist.append({'folder': '2022/12 Dec/221219/RAIRS/',
-# 'filestart': '1CO2_14He_100K_laseron',
-# 'min_filenum': 0,
-# 'max_filenum': 26 #max 26
-# })
-
-# # 20221219 Test if the water peak is still there after TPD
-# datalist.append({'folder': '2022/12 Dec/221219/RAIRS/',
-# 'filestart': 'test_water',
-# 'min_filenum': 0,
-# 'max_filenum': 0 #max 0
-# })
-
-# # 20221222 Oxygen dosing and then CO dosing
-# datalist.append({'folder': '2022/12 Dec/221222/RAIRS/',
-# 'filestart': '75s_O_16min_CO_Cu111',
-# 'min_filenum': 0,
-# 'max_filenum': 0 #max 0
-# })
-
-# # 20221223 Oxygen dosing and then CO dosing
-# datalist.append({'folder': '2022/12 Dec/221223/RAIRS/',
-# 'filestart': '120s_O_16mplus_CO_Cu111',
-# 'min_filenum': 36,
-# 'max_filenum': 36 #max 38
-# })
-
-# # # 20230102 Oxygen dosing at low Ekin and then CO dosing
-# # datalist.append({'folder': '2023/01 Jan/230102/RAIRS/',
-# # 'filestart': '4H_O2_0mplus_CO_Cu111',
-# # 'min_filenum': 0,
-# # 'max_filenum': 9 #max 9
-# # })
-
-# # 20230105 CO dosing on clean crystal, 5E-10 mbar
-# datalist.append({'folder': '2023/01 Jan/230105/RAIRS/',
-# 'filestart': '0m_O2_0mplus_CO_Cu111',
-# 'min_filenum': 0,
-# 'max_filenum': 6 #max 6
-# })
-
-# # 20230216 CO2 until saturation
-# datalist.append({'folder': '2023/02 Feb/230216/RAIRS/',
-# 'filestart': '4.75CO2_9He_100K_laseroff',
-# 'min_filenum': 0,
-# 'max_filenum':55  #max 55
-# })
-
-# # 20230221 H2 and then CO2
-# datalist.append({'folder': '2023/02 Feb/230221/RAIRS/',
-# 'filestart': 'D2_250K_CO2_100K',
-# 'min_filenum': 23, #start CO2 dosing 23
-# 'max_filenum':68  #max 68
-# })
-
-# # 20230302 H2 and then CO background dosing
-# datalist.append({'folder': '2023/03 Mar/230302/RAIRS/',
-# 'filestart': 'D2_250K_CO_180K',
-# 'min_filenum': 0, #Double CO pressure starting from 11
-# 'max_filenum':23  #max 23
-# })
-
-# # 20230327 Test measurements of just background stuff
-# datalist.append({'folder': '2023/03 Mar/230327/RAIRS/',
-# 'filestart': 'test_measurement_pausing',
-# 'min_filenum': 0, 
-# 'max_filenum':8  #max 8
-# })
-
-# # 20230327 Test measurements of just background stuff
-# datalist.append({'folder': '2023/03 Mar/230328/RAIRS/',
-# 'filestart': '2h_D2_long_CO2_Cu111',
-# 'min_filenum': 1, 
-# 'max_filenum':10  #max 10
-# })
-
-# # 20230522 CO buildup measurements with high Ekin beam and laser off
-# datalist.append({'folder': '2023/05 May/230522/RAIRS/',
-# 'filestart': '0.5CO2_9He_777C_100K_laseroff',
-# 'min_filenum': 0, 
-# 'max_filenum':35  #max 10
-# })
-
-# # 20240108 CO buildup measurements with high CO beam 
-# datalist.append({'folder': '2024/01 Jan/240108/RAIRS/',
-# 'filestart': 'CO_beam_100K',
-# 'min_filenum': 0, 
-# 'max_filenum':9  #max 9
-# })
-
-# # 20240108 CO buildup measurements with high CO beam 
-# datalist.append({'folder': '2024/01 Jan/240108/RAIRS/',
-# 'filestart': 'CO_beam_100K_afterflash',
-# 'min_filenum': 0, 
-# 'max_filenum':4  #max 4
-# })
-
-# # 20240108 CO buildup measurements with high CO beam 
-# datalist.append({'folder': '2024/01 Jan/240108/RAIRS/',
-# 'filestart': 'CO_beam_250K_afterflash',
-# 'min_filenum': 1, 
-# 'max_filenum':9  #max 9
-# })
-
-# # 240111 CO buildup measurements with high CO2 beam 
-# datalist.append({'folder': '2024/01 Jan/240111/RAIRS/',
-# 'filestart': '5CO2_250K',
-# 'min_filenum': 0, 
-# 'max_filenum':16  #max 19
-# })
-
-# # 240116 measurements with high CO2 beam and D2 coverage
-# datalist.append({'folder': '2024/01 Jan/240116/RAIRS/',
-# 'filestart': '5CO2_250K_withD2',
-# 'min_filenum': 0, 
-# 'max_filenum':16  #max 16
-# })
-
-
-# # 2024017 CO buildup measurements with CO beam 
-# datalist.append({'folder': '2024/01 Jan/240117/RAIRS/',
-# 'filestart': 'CO_beam_250K',
-# 'min_filenum': 1, 
-# 'max_filenum':9  #max 9
-# })
-
-# # 2024019 CO buildup measurements with CO beam and O2
-# datalist.append({'folder': '2024/01 Jan/240119/RAIRS/',
-# 'filestart': 'CO_beam_250K_withO2',
-# 'min_filenum': 1, 
-# 'max_filenum':6  #max 6
-# })
-
-# # 2024019 CO buildup measurements with CO beam and O2
-# datalist.append({'folder': '2024/01 Jan/240119/RAIRS/',
-# 'filestart': 'CO_beam_250K_withO2_afterflash',
-# 'min_filenum': 1, 
-# 'max_filenum':6  #max 6
-# })
-
-# 20240125 CO2 beam with D2
-datalist.append({'folder': '2024/01 Jan/240125/RAIRS/',
-#'filestart': 'CO2_beam_250K_withD2',
-'filestart':'long',
-'min_filenum': 0, 
-'max_filenum':1  #max 16
-})
-
-# 20240223 CO beam with D2
-datalist.append({'folder': '2024/02 Feb/240223/RAIRS/',
-#'filestart': 'CO',
-'filestart':'long',
-'min_filenum': 0, 
-'max_filenum':1  #22 long measurement, 23 after tpd
-})
-
-
-
 folderstart = "C:/Users/jansenc3/surfdrive/DATA/"
 folderstart = "C:/Users/Werk/Surfdrive/DATA/"
+datalist = []
+
+min = 0
+max = 18
+max2 = 38
+max2 = 18
+
+#-------------- All start at the same dataset ----------------------
+
+
+# # # 20230512 laser on and off CO2 buildup on cold crystal
+# datalist.append({'folder': '2023/05 May/230512/RAIRS/',
+# 'filestart': 'Laseron_02',
+# 'min_filenum':min, 
+# 'max_filenum':max  #max 18
+# })
+
+# datalist.append({'folder': '2023/05 May/230512/RAIRS/',
+# 'filestart': 'Laseroff_03',
+# 'min_filenum':min, 
+# 'max_filenum':max  #max 18
+# })
+
+# datalist.append({'folder': '2023/05 May/230512/RAIRS/',
+# 'filestart': 'Laseroff_04',
+# 'min_filenum':min, 
+# 'max_filenum':max  #max 18
+# })
+
+# datalist.append({'folder': '2023/05 May/230512/RAIRS/',
+# 'filestart': 'Laseron_05',
+# 'min_filenum':min, 
+# 'max_filenum':max  #max 18
+# })
+
+# datalist.append({'folder': '2023/05 May/230512/RAIRS/',
+# 'filestart': 'Laseron_06',
+# 'min_filenum':min, 
+# 'max_filenum':max  #max 18
+# })
+
+# datalist.append({'folder': '2023/05 May/230512/RAIRS/',
+# 'filestart': 'Laseroff_07',
+# 'min_filenum':min, 
+# 'max_filenum':max  #max 18
+# })
+
+# datalist.append({'folder': '2023/05 May/230512/RAIRS/',
+# 'filestart': 'Laseron_08',
+# 'min_filenum':min, 
+# 'max_filenum':max  #max 18
+# })
+
+# datalist.append({'folder': '2023/05 May/230512/RAIRS/',
+# 'filestart': 'Laseroff_09',
+# 'min_filenum':min, 
+# 'max_filenum':max  #max 18
+# })
+
+datalist.append({'folder': '2023/06 Jun/230602/RAIRS/',
+'filestart': 'Laseroff_03',
+'min_filenum':min, 
+'max_filenum':max2  #max 38
+})
+
+datalist.append({'folder': '2023/06 Jun/230602/RAIRS/',
+'filestart': 'Laseron_04',
+'min_filenum':min, 
+'max_filenum':max2  #max 38
+})
+
+datalist.append({'folder': '2023/06 Jun/230602/RAIRS/',
+'filestart': 'Laseron_05',
+'min_filenum':min, 
+'max_filenum':max2  #max 38
+})
+
+datalist.append({'folder': '2023/06 Jun/230602/RAIRS/',
+'filestart': 'Laseroff_06',
+'min_filenum':min, 
+'max_filenum':max2  #max 38
+})
 
 use_every_x = 1 #only uses one in every x measurements
-colors=['red', 'blue', 'lightcoral','cyan', 'purple', 'yellow']
+colors_varying = ['red', 'blue', 'lightcoral','cyan', 'purple', 'yellow', 'green', 'gray', 'black']
+colors_rb = ['red', 'blue', 'blue', 'red', 'red', 'blue', 'red', 'blue', 'cyan', 'orange', 'orange', 'cyan']
+colors_rb = ['red', 'blue', 'blue', 'red', 'red', 'blue', 'red', 'blue', 'blue', 'red', 'red', 'blue']
+colors_rb = ['red', 'blue', 'lightblue', 'pink']
+labels = ['laser on resonance', 'laser off resonance', 'laser off resonance', 'laser on resonance']
+markershapes = ['o', 's', 's', 'o', 'o', 's', 'o', 's', 'v', 'p', 'p', 'v']
+markershapes = ['o', 's', 's', 'o']
+colors_saturation = np.linspace(0.5,1,len(colors_rb))
+colors = [color_saturation*np.array(mpl.colors.to_rgb(color_rb)) for color_saturation, color_rb in zip(colors_saturation, colors_rb)]
+colors = colors_rb
 save_data=False
-save_figures=True
+save_figures=False
 dpi = 300
+subfolder = 'first4/useevery5/'
+use_every_x = 9
+subfolder = 'first18useevery9/' 
+# use_every_x = 1
+# subfolder = ''
 
-yshift=0.007
+axis = [None, None, None, None]
+
+# start_dataset = 2
+# stop_dataset = 9 + 6 - 2
+
+# datalist = datalist[start_dataset-2: stop_dataset-1]
+# colors_rb = colors_rb[start_dataset-2: stop_dataset-1]
+# markershapes = markershapes[start_dataset-2: stop_dataset-1]
+# colors_saturation = colors_saturation[start_dataset-2: stop_dataset-1]
+
 
 def main():
+
     for dataset in datalist:
         load_dataset(dataset)
+        if save_figures:
+            savefolder = folderstart+dataset['folder']+'Figures/'+subfolder
+            if not os.path.exists(savefolder):
+                os.makedirs(savefolder)    
 
-        npeak = 2078
-        width = 10
-        w_background = 3
+
+
+
+    for dataset in datalist:
+        npeak = 2345
+        width = 5
+        w_background = 2
         calculate_peak_properties(dataset, npeak, fit_voigt=False, width=width, w_background=w_background, save=save_data)
 
         # plot_peaks_single_dataset(dataset, npeak)
 
-        dataset['spectrum_list'][-1].plot_raw(include_background=True, axis=[2115, 2035, 0.0225, None]) #plots last one only now
-        print(dataset['spectrum_list'][-1].wavenumbers)
-        print(len(dataset['spectrum_list'][-1].absorbance))
+        # dataset['spectrum_list'][-1].plot_raw(include_background=True, axis=axis) #plots last one only now
+        # print(dataset['spectrum_list'][-1].wavenumbers)
+        # print(len(dataset['spectrum_list'][-1].absorbance))
 
         if save_data: save_peaks_single_dataset(dataset, npeak)
 
-        plot_spectra(dataset, use_every_x=use_every_x, yshift=yshift, nmin=1800, nmax=2400)
-        plot_spectra(dataset, use_every_x=use_every_x, yshift=yshift, ymin=0, ymax=0.005)
+        # plot_spectra(dataset, use_every_x=use_every_x, yshift=0.005, nmin=1800, nmax=2400)
+        # plot_spectra(dataset, use_every_x=use_every_x, yshift=0.005)
 
         # for spectrum in dataset['spectrum_list']:
         #     spectrum.voigt_fit(npeak, plot=False)
 
 
-    # plot_all_peaks_together(npeak)
+
+    plot_all_peaks_together(npeak, save=save_figures)
     # # plot_integrals(npeak, typ='voigt')
-    # plot_integrals(npeak, typ='sum')
+    plot_integrals(npeak, typ='sum', save=save_figures)
     # plot_peak_position(npeak, typ='raw', yrange=5)
     # plot_peak_position(npeak, typ='voigt', yrange=5)
     # plot_peak_height(npeak)
 
-    for dataset in datalist:
-        npeak = 2050
-        width = 250
-        w_background = 10
-        calculate_peak_properties(dataset, npeak, fit_voigt=False, width=width, w_background=w_background, save=save_data)
 
-        # plot_peaks_single_dataset(dataset, npeak)
+    # for dataset in datalist:
+    #     npeak = 3709
+    #     width = 7
+    #     w_background = 3
+    #     calculate_peak_properties(dataset, npeak, fit_voigt=False, width=width, w_background=w_background, save=save_data)
 
-        if save_data: save_peaks_single_dataset(dataset, npeak)
+    #     # plot_peaks_single_dataset(dataset, npeak)
 
-    # plot_all_peaks_together(npeak)
-    # plot_integrals(npeak, typ='sum')
-    # # plot_peak_position(npeak, typ='raw', yrange=5)
-    # # plot_integrals(npeak, typ='voigt')
-    # # plot_peak_position(npeak, typ='voigt', yrange=5)
-    # # plot_peak_height(npeak)
+    #     if save_data: save_peaks_single_dataset(dataset, npeak)
 
-    for dataset in datalist:
-        npeak = 2200
-        width = 50
-        w_background = 10
-        calculate_peak_properties(dataset, npeak, width=width, w_background=w_background, save=save_data, fit_voigt=False)
-        plot_firstlast(dataset,npeak,save=save_figures)
-        plot_firstlastdiff(dataset,npeak,save=save_figures)
+    # plot_all_peaks_together(npeak, save=save_figures)
+    # plot_integrals(npeak, typ='sum', save=save_figures, title=r'$\nu_1+\nu_3$')
+    # # # plot_peak_position(npeak, typ='raw', yrange=5)
+    # # # plot_integrals(npeak, typ='voigt')
+    # # # plot_peak_position(npeak, typ='voigt', yrange=5)
+    # # # plot_peak_height(npeak)
 
-    plot_all_peaks_together(npeak)
-    
+    # for dataset in datalist:
+    #     npeak = 3601
+    #     width = 7
+    #     w_background = 3
+    #     calculate_peak_properties(dataset, npeak, width=width, w_background=w_background, save=save_data, fit_voigt=False)
+    # plot_all_peaks_together(npeak, save=save_figures)
+    # plot_integrals(npeak, typ='sum', save=save_figures)
 
-    for dataset in datalist:
-        npeak = 2850
-        width = 200
-        w_background = 10
-        calculate_peak_properties(dataset, npeak, width=width, w_background=w_background, save=save_data, fit_voigt=False)
-        plot_firstlast(dataset,npeak,save=save_figures)
-        plot_firstlastdiff(dataset,npeak,save=save_figures)
-   
-    plot_all_peaks_together(npeak)
+    # for dataset in datalist:
+    #     npeak = 2284
+    #     width = 5
+    #     w_background = 2
+    #     calculate_peak_properties(dataset, npeak, width=width, w_background=w_background, save=save_data, fit_voigt=False)
+    # plot_all_peaks_together(npeak, save=save_figures)
+    # plot_integrals(npeak, typ='sum', save=save_figures, title='$^{13}$CO$_2$')
+
 
     for dataset in datalist:
-        npeak = 1300
-        width = 100
+        npeak = 2380
+        width = 60
         w_background = 10
         calculate_peak_properties(dataset, npeak, width=width, w_background=w_background, save=save_data, fit_voigt=False)
-        plot_firstlast(dataset,npeak,save=save_figures)
-        plot_firstlastdiff(dataset,npeak,save=save_figures)
-   
-    plot_all_peaks_together(npeak)
+    plot_all_peaks_together(npeak, save=save_figures)
+    plot_integrals(npeak, typ='sum', save=save_figures)
 
     # for dataset in datalist:
     #     npeak = 2013
     #     width = 40
     #     w_background = 10
     #     calculate_peak_properties(dataset, npeak, width=width, w_background=w_background, save=save_data, fit_voigt=False)
-    # plot_all_peaks_together(npeak)
+    # plot_all_peaks_together(npeak, save=save_figures)
 
-    for dataset in datalist:
-        npeak = 2000
-        width = 200
-        w_background = 20
-        calculate_peak_properties(dataset, npeak, width=width, w_background=w_background, save=save_data, fit_voigt=False)
-        plot_firstlast(dataset,npeak,save=save_figures)
-        plot_firstlastdiff(dataset,npeak,save=save_figures)
-    plot_all_peaks_together(npeak)
-
-
-    for dataset in datalist:
-        npeak = 3100
-        width = 1900
-        w_background = 20
-        calculate_peak_properties(dataset, npeak, width=width, w_background=w_background, save=save_data, fit_voigt=False)
-        plot_firstlastdiff_wide(dataset,npeak,save=save_figures, yrange=[-0.004, 0.003])
-    plot_all_peaks_together(npeak)
-
+    plot_spectra(dataset, nmin=2050, nmax=3750, ymin=-0.02, ymax=0.15, yshift=0, start_spectrum=16, use_every_x=10, save=save_figures)
 
 ############ Functions ###################
 
@@ -402,7 +284,7 @@ def calculate_peak_properties(dataset, npeak, width=20, w_background=10, save=Fa
         dataset['voigt_pos']=np.array(dataset['voigt_pos'])
 
         if save:
-            savefolder = folderstart+dataset['folder']+'Analyzed_data/'
+            savefolder = folderstart+dataset['folder']+'Analyzed_data/'+subfolder
             if not os.path.exists(savefolder):
                 os.makedirs(savefolder)    
             np.savetxt(savefolder+dataset['filestart']+'_times.txt', dataset['times'].transpose(), header='Timestamp in minutes (from start of the day)')
@@ -426,20 +308,27 @@ def save_peaks_single_dataset(dataset,npeak):
         os.makedirs(savefolder)    
     np.savetxt(savefolder+dataset['filestart']+'_all_peaks_'+str(npeak)+'.txt', data_array, header='First column: wavenumbers, other columns: all peaks')
 
-def plot_spectra(dataset, nmin=1200, nmax=5000, ymin=-0.01, ymax=0.05, yshift=0, start_spectrum=0, use_every_x=1):
+def plot_spectra(dataset, nmin=1200, nmax=5000, ymin=-0.01, ymax=0.05, yshift=0, start_spectrum=0, use_every_x=1, save=False):
     time_0 = dataset['spectrum_list'][0].timestamp
     fig, ax = plt.subplots(figsize=(6,4))
     for index in np.arange(start_spectrum, len(dataset['spectrum_list']), use_every_x):
         spectrum = dataset['spectrum_list'][index]
         ax.plot(spectrum.wavenumbers, spectrum.absorbance+index*yshift, linewidth=1, label=str(int((spectrum.timestamp-time_0)/60+0.5))+' min')
-    ax.axis([nmax, nmin, ymin, ymax+index*yshift])
+    ax.axis([nmax, nmin, ymin, ymax+len(dataset['spectrum_list'])*yshift])
     ax.set_title(dataset['filestart'])
     ax.set_xlabel('Wavenumber')
     ax.set_ylabel('Absorbance')
     ax.legend(loc='upper left')
     
+    if save:
+        savefolder = folderstart+dataset['folder']+'Figures/'+subfolder
+        plt.savefig(savefolder+'spectra.png', dpi=dpi)
+        plt.savefig(savefolder+'spectra.eps', dpi=dpi)
+
     plt.show()
     plt.close()
+
+
 
 def plot_peak_height(npeak, save=False):
     print('plot_peak_height')
@@ -496,160 +385,57 @@ def plot_peak_position(npeak, typ='raw', yrange=5):
     ax.set_ylabel('Peak position')
 
 def plot_peak_progression(spectrum_list, npeak, color, label=None):
-    color_list = np.linspace(0, 0.9, len(spectrum_list))
+    """
+    Plots all spectra of a single dataset, zoomed in on a single peak
+    color as specified, lightness depends on number of the spectrum
+    """
+    lightness_list = np.linspace(0.5, 0.9, len(spectrum_list))
+    color_list = [np.array(mpl.colors.to_rgb(color))*i for i in lightness_list]
+    color_list = [color for i in lightness_list]
+
+    # linestyles = ['-', '--', ':', '-.']
+    # for spectrum, color, ls in zip(spectrum_list, color_list, range(len(linestyles))):
+    #         plt.plot(spectrum.peakdictionary[npeak]['waven'], spectrum.peakdictionary[npeak]['peak'], ls=linestyles[ls],
+    #                         color=color, label=spectrum.filename[-2:])
+    first = True
     for spectrum, color in zip(spectrum_list, color_list):
             if not label:
-                label=spectrum.filename[-2:]
-            plt.plot(spectrum.peakdictionary[npeak]['waven'], spectrum.peakdictionary[npeak]['peak'],
-                            color=[color,color,color], label=label)
+                label = spectrum.filename[-2:]
+            if first:
+                plt.plot(spectrum.peakdictionary[npeak]['waven'], spectrum.peakdictionary[npeak]['peak'],
+                            color=color, label=label, linewidth=1)
+                first=False
+            else:
+                plt.plot(spectrum.peakdictionary[npeak]['waven'], spectrum.peakdictionary[npeak]['peak'],
+                            color=color, linewidth=1)
 
 
-def plot_all_peaks_together(npeak):
+def plot_all_peaks_together(npeak, save=False):
+    """
+    Plot all peaks of all datasets together, with colors varying between datasets 
+    and lightness indicating the number of the spectrum in each dataset
+    """
     print('plot_all_peaks_together')
     fig_peaks, ax_peaks = plt.subplots() 
     fig_peaks.set_dpi(dpi)
-    for dataset, color in zip(datalist, colors):
-        plot_peak_progression(dataset['spectrum_list'], npeak, color)
+    for dataset, color, label in zip(datalist, colors, labels):
+        plot_peak_progression(dataset['spectrum_list'], npeak, color, label)
         # ax_peaks.plot([],[], color=color, label=dataset['filestart'])
     waven = dataset['spectrum_list'][0].peakdictionary[npeak]['waven']
     ax_peaks.axis([np.max(waven), np.min(waven), None,None])
     ax_peaks.set_xlabel('Wavenumber')
     ax_peaks.set_ylabel('Absorbance')
-    # ax_peaks.legend()
+    ax_peaks.legend(loc='best', fontsize=10)
 
-def plot_firstlast(dataset,npeak,save=False, yrange=None):
-    """
-    does the same as plot_all_peaks together
-    """
-    print('plot_firstlast')
-    fig_peaks, ax_peaks = plt.subplots() 
-    fig_peaks.set_dpi(dpi)
-    for spectrum, color, label in zip(dataset['spectrum_list'], ['black', 'blue'], ['after dosing', 'after TPD']):
-        ax_peaks.plot(spectrum.peakdictionary[npeak]['waven'],spectrum.peakdictionary[npeak]['peak'], color=color, label=label)
-        # ax_peaks.plot([],[], color=color, label=dataset['filestart'])
-    waven = dataset['spectrum_list'][0].peakdictionary[npeak]['waven']
-    if yrange:
-            ax_peaks.axis([np.max(waven), np.min(waven), yrange[0],yrange[1]])
-    else:
-        ax_peaks.axis([np.max(waven), np.min(waven), None,None])
-    ax_peaks.legend(loc='upper right')
-    ax_peaks.set_xlabel('Wavenumber')
-    ax_peaks.set_ylabel('Absorbance')
+    figure_look(ax_peaks)
+
     if save:
-        savefolder = folderstart+dataset['folder']+'Figures/'
-        if not os.path.exists(savefolder):
-            os.makedirs(savefolder)    
-        plt.savefig(savefolder+str(npeak)+'_firstlast.png', dpi=300, bbox_inches='tight')
-        plt.savefig(savefolder+str(npeak)+'_firstlast.eps', dpi=300, bbox_inches='tight')
-        plt.savefig(savefolder+str(npeak)+'_firstlast.pdf', dpi=300, bbox_inches='tight')
-    # ax_peaks.legend()
+        savefolder = folderstart+dataset['folder']+'Figures/'+subfolder
+        plt.savefig(savefolder+'_all_peaks_'+str(npeak)+'.png', bbox_inches='tight', dpi=dpi)
+        plt.savefig(savefolder+'_all_peaks_'+str(npeak)+'.eps', bbox_inches='tight', dpi=dpi)
 
-def plot_firstlastdiff(dataset,npeak,save=False, yrange=None):
-    """
-    does the same as plot_all_peaks together
-    """
-    print('plot_firstlastdiff')
-    fig_peaks, axes = plt.subplots(2,1,sharex=True) 
-    fig_peaks.subplots_adjust(hspace=0)
-    ax_peaks = axes[0]
-    ax_diff = axes[1]
-    fig_peaks.set_dpi(dpi)
-    for spectrum, color, label in zip(dataset['spectrum_list'], ['black', 'blue'], ['after dosing', 'after TPD']):
-        ax_peaks.plot(spectrum.peakdictionary[npeak]['waven'],spectrum.peakdictionary[npeak]['peak'], color=color, label=label)
-        # ax_peaks.plot([],[], color=color, label=dataset['filestart'])
-    waven = dataset['spectrum_list'][0].peakdictionary[npeak]['waven']
-    waven1 = dataset['spectrum_list'][1].peakdictionary[npeak]['waven']
-    data0 = dataset['spectrum_list'][0].peakdictionary[npeak]['peak']
-    data1 = dataset['spectrum_list'][1].peakdictionary[npeak]['peak']
-    data = data0-data1
-    ax_diff.plot(waven, data, color='red', label='Difference (dosing-TPD)')
-    ax_diff.legend(loc='upper right')
 
-    #print(waven == waven1)
-    if yrange:
-            ax_peaks.axis([np.max(waven), np.min(waven), yrange[0],yrange[1]])
-    else:
-        ax_peaks.axis([np.max(waven), np.min(waven), None,None])
-    ylims = ax_peaks.get_ylim()
-    ax_diff.set_ylim(ylims)
-    ax_peaks.legend(loc='upper right')
-    ax_peaks.set_xlabel('Wavenumber')
-    ax_peaks.set_ylabel('Absorbance')
-    if save:
-        savefolder = folderstart+dataset['folder']+'Figures/'
-        if not os.path.exists(savefolder):
-            os.makedirs(savefolder)    
-        plt.savefig(savefolder+str(npeak)+'_firstlastdiff.png', dpi=300, bbox_inches='tight')
-        plt.savefig(savefolder+str(npeak)+'_firstlastdiff.eps', dpi=300, bbox_inches='tight')
-        plt.savefig(savefolder+str(npeak)+'_firstlastdiff.pdf', dpi=300, bbox_inches='tight')
-    # ax_peaks.legend()
 
-def plot_firstlastdiff_wide(dataset,npeak,save=False, yrange=None):
-    """
-    does the same as plot_all_peaks together
-    """
-    print('plot_firstlastdiff_wide')
-    fig_peaks, axes = plt.subplots(2,1,sharex=True, figsize=(12,4)) 
-    fig_peaks.subplots_adjust(hspace=0)
-    ax_peaks = axes[0]
-    ax_diff = axes[1]
-    fig_peaks.set_dpi(dpi)
-    for spectrum, color, label in zip(dataset['spectrum_list'], ['black', 'blue'], ['after dosing', 'after TPD']):
-        ax_peaks.plot(spectrum.peakdictionary[npeak]['waven'],spectrum.peakdictionary[npeak]['peak'], color=color, label=label)
-        # ax_peaks.plot([],[], color=color, label=dataset['filestart'])
-    waven = dataset['spectrum_list'][0].peakdictionary[npeak]['waven']
-    waven1 = dataset['spectrum_list'][1].peakdictionary[npeak]['waven']
-    data0 = dataset['spectrum_list'][0].peakdictionary[npeak]['peak']
-    data1 = dataset['spectrum_list'][1].peakdictionary[npeak]['peak']
-    data = data0-data1
-    ax_diff.plot(waven, data, color='red', label='Difference (dosing-TPD)')
-    ax_diff.legend(loc='upper right')
-
-    #print(waven == waven1)
-    if yrange:
-            ax_peaks.axis([np.max(waven), np.min(waven), yrange[0],yrange[1]])
-    else:
-        ax_peaks.axis([np.max(waven), np.min(waven), None,None])
-    ylims = ax_peaks.get_ylim()
-    ax_diff.set_ylim(ylims)
-    ax_peaks.legend(loc='upper right')
-    ax_peaks.set_xlabel('Wavenumber')
-    ax_peaks.set_ylabel('Absorbance')
-    if save:
-        savefolder = folderstart+dataset['folder']+'Figures/'
-        if not os.path.exists(savefolder):
-            os.makedirs(savefolder)    
-        plt.savefig(savefolder+str(npeak)+'_firstlastdiff.png', dpi=300, bbox_inches='tight')
-        plt.savefig(savefolder+str(npeak)+'_firstlastdiff.eps', dpi=300, bbox_inches='tight')
-        plt.savefig(savefolder+str(npeak)+'_firstlastdiff.pdf', dpi=300, bbox_inches='tight')
-    # ax_peaks.legend()
-
-def plot_firstlast_wide(dataset,npeak,save=False, yrange=None):
-    """
-    does the same as plot_all_peaks together
-    """
-    print('plot_firstlast_wide')
-    fig_peaks, ax_peaks = plt.subplots(figsize=(12,4)) 
-    fig_peaks.set_dpi(dpi)
-    for spectrum, color, label in zip(dataset['spectrum_list'], ['black', 'blue'], ['after dosing', 'after TPD']):
-        ax_peaks.plot(spectrum.peakdictionary[npeak]['waven'],spectrum.peakdictionary[npeak]['peak'],linewidth=0.5, color=color, label=label)
-        # ax_peaks.plot([],[], color=color, label=dataset['filestart'])
-    waven = dataset['spectrum_list'][0].peakdictionary[npeak]['waven']
-    if yrange:
-            ax_peaks.axis([np.max(waven), np.min(waven), yrange[0],yrange[1]])
-    else:
-        ax_peaks.axis([np.max(waven), np.min(waven), None,None])
-    ax_peaks.legend(loc='upper right')
-    ax_peaks.set_xlabel('Wavenumber')
-    ax_peaks.set_ylabel('Absorbance')
-    if save:
-        savefolder = folderstart+dataset['folder']+'Figures/'
-        if not os.path.exists(savefolder):
-            os.makedirs(savefolder)    
-        plt.savefig(savefolder+str(npeak)+'_firstlast.png', dpi=300, bbox_inches='tight')
-        plt.savefig(savefolder+str(npeak)+'_firstlast.eps', dpi=300, bbox_inches='tight')
-        plt.savefig(savefolder+str(npeak)+'_firstlast.pdf', dpi=300, bbox_inches='tight')
-    # ax_peaks.legend()
 
 def plot_peaks_single_dataset(dataset, npeak):
     print('plot_peaks_single_dataset')
@@ -663,25 +449,45 @@ def plot_peaks_single_dataset(dataset, npeak):
     ax_peaks.set_ylabel('Absorbance')
     ax_peaks.set_title(dataset['filestart'])
 
-def plot_integrals(npeak, typ='voigt'):
+def plot_integrals(npeak, typ='voigt', title=None, save=False):
     """
     Plots integrals as a function of time for all datasets
     """
     print('plot_integrals')
     fig_int, ax_int = plt.subplots()
     fig_int.set_dpi(dpi)
-    for dataset, color in zip(datalist, colors): 
+    for dataset, color, marker, label in zip(datalist, colors, markershapes, labels): 
         if typ == 'voigt':
             integrals = dataset['voigt_integrals'] 
         elif typ == 'sum':
             integrals = dataset['integrals']
         ax_int.plot((dataset['times']-dataset['times'][0]), integrals,
-                    'o', label=dataset['filestart'], color=color)
+                    'o', color=color, marker=marker, label=label)
     ax_int.axis([0, None, 0, None])
-    ax_int.set_title(typ)
+    if not title:
+        ax_int.set_title(typ+' wavenumber '+str(npeak))
+    else:
+        ax_int.set_title(title)
     ax_int.legend(loc='best')
     ax_int.set_xlabel('Time (minutes)')
     ax_int.set_ylabel('Integrated peak')
+
+    figure_look(ax_int)
+
+    if save:
+        savefolder = folderstart+dataset['folder']+'Figures/'+subfolder
+        plt.savefig(savefolder+'_integrals_'+typ+'_'+str(npeak)+'.png', bbox_inches='tight', dpi=dpi)
+        plt.savefig(savefolder+'_integrals_'+typ+'_'+str(npeak)+'.eps', bbox_inches='tight', dpi=dpi)
+
+
+def figure_look(ax, fontsize=14):
+    ax.xaxis.set_minor_locator(AutoMinorLocator())
+    ax.yaxis.set_minor_locator(AutoMinorLocator())
+    ax.tick_params(axis='x', top=True, direction='in')  #top=True, 
+    ax.tick_params(axis='y', left=True, right=True, direction='in') #, labelleft=True, right=True, 
+    ax.tick_params(which='minor', top=True, direction='in')  
+    ax.tick_params(which='minor', left=True, right=True, direction='in')
+    mpl.rcParams.update({'font.size': fontsize})
 
 
 @dataclass
@@ -702,7 +508,6 @@ class Spectrum:
         self.absorbance = self.all_data['AB']
         self.background = self.all_data['ScRf']
         self.raw = self.all_data['ScSm']
-        self.description = self.all_data['Sample']['SNM']
 
     def get_time_from_data(self):
         # digits = 111 + len(self.filename)
@@ -856,7 +661,7 @@ class Spectrum:
 
 
 
-if __name__ == '__main__':
-    main()
+
+main()
 
 

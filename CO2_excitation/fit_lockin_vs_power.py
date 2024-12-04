@@ -1,4 +1,5 @@
 import numpy as np
+import glob
 from matplotlib import pyplot as plt
 from matplotlib import cm 
 import datetime as dt
@@ -21,6 +22,14 @@ A_guess = { 'R0':1.0,
             'R10':0.53134895
             } #note: for fitting, the inverse of this is used
 
+A_guess = { 'R0':3.0,
+            'R2':1,
+            'R4':0.8,
+            'R6':0.8,
+            'R8':1.2,
+            'R10':2
+            } #note: for fitting, the inverse of this is used
+
 
 
 folderstart = "C:/Users/jansenc3/surfdrive/"
@@ -28,6 +37,8 @@ folderstart = "C:/Users/Werk/Surfdrive/"
 folder = folderstart+"DATA/Power and wavelength data/"
 simulationsfolder = folderstart+'DATA/Laser/Simulations/CO2/220602/' #without rotation
 simulationsfolder = folderstart+'DATA/Laser/Simulations/CO2/220603/' #with rotation
+simulationsfolder = folderstart+'DATA/Laser/Simulations/CO2/230817/withrotations/' #with rotation
+# simulationsfolder = folderstart+'DATA/Laser/Simulations/CO2/231206/test/' #without rotation and projection
 
 months = {'01':'Jan', '02':'Feb', '03':'Mar', '04':'Apr', '05':'May', '06':'Jun', '07':'Jul', '08':'Aug', '09':'Sep', '10':'Oct', '11':'Nov', '12':'Dec'}
 transitions = ['R0', 'R2', 'R4', 'R6', 'R8', 'R10']
@@ -38,35 +49,38 @@ def main():
     print('main')
 
 #### Fit with separate width ####
-    amplitudes = []
-    for transition in transitions:
-        datadic = read(transition)
-
-        x_guess = np.array([1.2,datainfo[transition]['min_power'],1/A_guess[transition]/3]) #1/A_guess/3 because I changed the fit parameter and I divided the data by the off-resonance signal (close to 3 V)
-        print(x_guess)
-        w_power, pmin, A = fit_full(datadic, x_guess, bounds=np.array([1.1,1.5,3]))
-        if save:
-            np.savetxt(simulationsfolder+transition+'_x.txt', [w_power, pmin, A])
-        print (pmin, w_power, A)
-        amplitudes.append(A)
-        plot_fit(transition, datadic, w_power, pmin, A, name='')
-    print(amplitudes)
-
-#### Fit with shared width ####
-    # popt = fit_all()
-    # x = popt.x
-    # if save:
-    #     np.savetxt(simulationsfolder+'x.txt', x)
-    # print(popt)
-    # # x = [1.09090909, 4.86848057, 0.98337631, 4.32269159, 4.15274705, 3.80092913, 5.25014092, 5.10166111, 4.64286135, 4.88022767, 3.1502073, 4.4786131, 1.94651]
-    # index = 1
+    # amplitudes = []
     # for transition in transitions:
     #     datadic = read(transition)
-    #     w_power = x[0]
-    #     pmin = x[index]
-    #     A = x[index+1]
-    #     index += 2
-    #     plot_fit(transition, datadic, w_power, pmin, A, name='_all')
+
+    #     x_guess = np.array([1.2,datainfo[transition]['min_power'],1/A_guess[transition]/3]) #1/A_guess/3 because I changed the fit parameter and I divided the data by the off-resonance signal (close to 3 V)
+    #     print(x_guess)
+    #     w_power, pmin, A = fit_full(datadic, x_guess, bounds=np.array([1.1,1.5,3]))
+    #     if save:
+    #         np.savetxt(simulationsfolder+transition+'_x.txt', [w_power, pmin, A])
+    #     print (pmin, w_power, A)
+    #     amplitudes.append(A)
+    #     plot_fit(transition, datadic, w_power, pmin, A, name='')
+    # print(amplitudes)
+
+#### Fit with shared width ####
+    popt = fit_all()
+    # print(popt)
+    x = popt.x
+    hess = popt.hess
+    print(1/np.diag(hess))
+    if save:
+        np.savetxt(simulationsfolder+'x.txt', x)
+    print(popt)
+    # x = [1.09090909, 4.86848057, 0.98337631, 4.32269159, 4.15274705, 3.80092913, 5.25014092, 5.10166111, 4.64286135, 4.88022767, 3.1502073, 4.4786131, 1.94651]
+    index = 1
+    for transition in transitions:
+        datadic = read(transition)
+        w_power = x[0]
+        pmin = x[index]
+        A = x[index+1]
+        index += 2
+        plot_fit(transition, datadic, w_power, pmin, A, name='_all')
 
 
 
@@ -78,6 +92,8 @@ def plot_fit(transition, datadic, w_power, pmin, A, name=''):
         plt.xlabel('Power (mW)')
         plt.ylabel('Excited population')
         if save:
+            if not os.path.exists(simulationsfolder+'figures/'):
+                os.makedirs(simulationsfolder+'figures/')
             plt.savefig(simulationsfolder+'figures/'+transition+'_fit'+name+'.png')
         plt.show()
         plt.close()
@@ -178,7 +194,12 @@ def read(transition):
     dic['power_raw'] *= 1000
     dic['offresonance'] = np.loadtxt(folder+'lockin_offresonance.txt')
 
-    dic['simulation_power'], dic['simulation'] = np.loadtxt(simulationsfolder+transition+'_averaged.txt', unpack=True)
+    # dic['simulation_power'], dic['simulation'] = np.loadtxt(simulationsfolder+transition+'_averaged.txt', unpack=True)
+
+    filename = glob.glob(simulationsfolder+transition+'*.txt')
+    # print(filename)
+    dic['simulation_power'], dic['simulation'] = np.loadtxt(filename[0], unpack=True)
+
     # dic['simulation_power'], dic['simulation'] = np.loadtxt(simulationsfolder+transition+'/averaged.txt', unpack=True)
     return dic
 

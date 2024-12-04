@@ -14,7 +14,7 @@ folderstart = 'C:/Users/Werk/surfdrive/'
 
 filenamestart='KW'
 folder = folderstart+'Data/2021/09 Sep/210930/TOF/'
-savefolder = 'C:/Users/Werk/surfdrive/Proefschrift/Pictures etc/Setup_Methods/'
+savefolder = 'C:/Users/Werk/surfdrive/Proefschrift/Pictures etc/Methods/'
 
 alpha = 50000 #determines width of example fitfunction for chopper convolution
 fitparameters = [1,0,566.433566433567,1568.0914069668336,1E-10,151.4048824617757] #for the chopper plot
@@ -31,12 +31,14 @@ def main():
         figure_style(ax)
     if save:
         plt.savefig(savefolder+'TOF_raw', dpi=500)
+        plt.savefig(savefolder+'TOF_raw.pdf', dpi=500)
 
     fig, axes = plot_raw_TOF(include_fit=True)
     for ax in axes:
         figure_style(ax)
     if save:
         plt.savefig(savefolder+'TOF_fit', dpi=500)
+        plt.savefig(savefolder+'TOF_fit.pdf', dpi=500)
 
 
     fig, ax = plot_chopper_function(include_TOF_shapes=False)
@@ -44,12 +46,14 @@ def main():
     figure_letter(ax, 'a')
     if save:
         plt.savefig(savefolder+'Chopper.png', dpi=500)
+        plt.savefig(savefolder+'Chopper.pdf', dpi=500)
 
     fig, ax = plot_chopper_function(include_TOF_shapes=True, t_axis = 0.06)
     figure_style(ax)
     figure_letter(ax, 'b')
     if save:
         plt.savefig(savefolder+'Chopper_realistic.png', dpi=500)
+        plt.savefig(savefolder+'Chopper_realistic.pdf', dpi=500)
 
 
     global fitparameters 
@@ -58,6 +62,7 @@ def main():
     figure_style(ax)
     figure_letter(ax, 'c')
     if save:
+        plt.savefig(savefolder+'Chopper_example.png', dpi=500)
         plt.savefig(savefolder+'Chopper_example.png', dpi=500)
 
 

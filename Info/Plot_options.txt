@@ -4,6 +4,9 @@ https://jdhao.github.io/2017/06/03/change-aspect-ratio-in-mpl/
 Use style:
 plt.style.use('style')
 
+Define style in script:
+https://matplotlib.org/stable/tutorials/introductory/customizing.html
+
 Make figure:
 fig, ((ax11, ax12), (ax21, ax22)) = plt.subplots(2,2, sharex='col', sharey='all',num=1,clear=True)
 
@@ -19,7 +22,7 @@ ax11.set_xscale('log')
 secax11 = ax11.secondary_xaxis('top', funtions=(conversion, inverse)) (linked secondary axis)
 plt.yticks(np.linspace(axis[2],axis[3],5))
 
-TICKS:
+TICKS and labels:
 https://matplotlib.org/api/_as_gen/matplotlib.pyplot.tick_params.html
 ax11.tick_params(top=True, labelleft=False, direction='inout')
 ax11.tick_params(axis='x', direction='in', length=5, width=2, color='black')

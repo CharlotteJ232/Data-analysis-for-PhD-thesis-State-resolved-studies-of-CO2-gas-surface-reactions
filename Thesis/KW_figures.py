@@ -14,11 +14,11 @@ folderstart = 'C:/Users/Werk/surfdrive/'
 
 sys.path.append(folderstart+'Python/')
 
-from KWTPD.process_KW_OO_positions import Measurement
+from KW.process_KW_OO_positions import Measurement
 
 filenamestart='KW'
 folder = folderstart+'DATA/2020/03 Mar/200311/KW/Processed_data/'
-savefolder = 'C:/Users/Werk/surfdrive/Proefschrift/Pictures etc/Setup_Methods/'
+savefolder = 'C:/Users/Werk/surfdrive/Proefschrift/Pictures etc/Methods/'
 positions = np.arange(179, 220, 2)
 t_flag1_open = 9 #s, total time flag 1 is open
 t_open_flag2 = 3 #s, time after opening of flag 1
@@ -27,7 +27,7 @@ t_background = 4 #amount of seconds left and right of the measurement that are k
 xmin = -6
 xmax = 10
 
-save=True 
+save=True
 
 def main():
     with open(folder+'data.pickle', 'rb') as f:
@@ -89,6 +89,7 @@ def plot_set(measurement, save=False):
         if not os.path.exists(savefolder):
             os.makedirs(savefolder)
         plt.savefig(savefolder+'KW_analysis.png', dpi=500)
+        plt.savefig(savefolder+'KW_analysis.pdf', dpi=500)
     plt.show()
     plt.close()
 
@@ -123,6 +124,7 @@ def plot_explanation(measurement, save=False):
         if not os.path.exists(savefolder):
             os.makedirs(savefolder)
         plt.savefig(savefolder+'KW_explanation.png', dpi=500)
+        plt.savefig(savefolder+'KW_explanation.pdf', dpi=500)
 
     plt.show()
     plt.close()
@@ -146,7 +148,8 @@ def plot_analyzed_data(measurement, save=False):
     if save:
         if not os.path.exists(savefolder):
             os.makedirs(savefolder)
-        plt.savefig(savefolder+'analyzed_'+str(measurement.position)+'.png', dpi=500)        
+        plt.savefig(savefolder+'analyzed_'+str(measurement.position)+'.png', dpi=500)   
+        plt.savefig(savefolder+'analyzed_'+str(measurement.position)+'.pdf', dpi=500)     
     plt.show()
     plt.close()
 
